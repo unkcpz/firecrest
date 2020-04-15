@@ -1,0 +1,8 @@
+1. Squeue only displays active slurm jobs.
+   The job we submitted is so fast that it has already finished.
+   You can add in your jobscript some delay, with the sleep command,
+   so that you have enough time to perform the calls and get
+   an active job.
+
+2. FirecREST has created the task but it hasn't submitted the
+   job to slurm yet. This is why you see the task as "Queued".
