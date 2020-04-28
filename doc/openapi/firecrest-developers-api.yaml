@@ -1,7 +1,7 @@
 openapi: 3.0.0
 servers:
-  - url: 'http://127.0.0.1/api'
-  - url: 'https://127.0.0.1/api'
+  - url: 'http://FIRECREST_URL'
+  - url: 'https://FIRECREST_URL'
 info:
   version: 1.0.0-RC1
   title: FirecREST API
@@ -10,8 +10,8 @@ info:
     high-performance and reusable framework that integrates with existing HPC
     infrastructure, thus enabling the access to HPC resources to web-enabled
     services.
-    
-    
+
+
     FirecREST provides a REST API that defines a set of functions through which
     developers can interact with using the HTTP/REST protocol architecture.
     Calls to the REST API received by the services gateway are translated into
@@ -25,18 +25,12 @@ paths:
       summary: List of services
       description: >-
         Returns a list containing all available micro services with a name,
-        description, status, and endpoint.
+        description, and status.
       tags:
         - Status
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - $ref: '#/components/parameters/pageSize'
-        - $ref: '#/components/parameters/pageNumber'
+      # parameters:
+      #   - $ref: '#/components/parameters/pageSize'
+      #   - $ref: '#/components/parameters/pageNumber'
       responses:
         '200':
           description: List of services with status and description.
@@ -48,12 +42,6 @@ paths:
           $ref: '#/components/responses/Standard400Error'
   '/status/services/{servicename}':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - name: servicename
         in: path
         description: The service name
@@ -63,8 +51,7 @@ paths:
     get:
       summary: Get service information
       description: >-
-        Returns a single service descriptor (name, description, status, and
-        endpoint) from its name
+        Returns a single service descriptor (name, description and status) from its name.
       tags:
         - Status
       responses:
@@ -79,21 +66,15 @@ paths:
   '/status/systems':
     get:
       summary: List of systems
-      description: Returns a list containing all available systems and response status
+      description: Returns a list containing all available systems and response status.
       tags:
         - Status
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - $ref: '#/components/parameters/pageSize'
-        - $ref: '#/components/parameters/pageNumber'
+      # parameters:
+      #   - $ref: '#/components/parameters/pageSize'
+      #   - $ref: '#/components/parameters/pageNumber'
       responses:
         '200':
-          description: List of systems with status and description.
+          description: List of systems with status and description
           content:
             '*/*':
               schema:
@@ -104,12 +85,6 @@ paths:
           $ref: '#/components/responses/Standard500Error'
   '/status/systems/{machinename}':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - name: machinename
         in: path
         description: The system name
@@ -117,7 +92,7 @@ paths:
         schema:
           type: string
     get:
-      summary: Get system information.
+      summary: Get system information
       description: Returns a single system from its name.
       tags:
         - Status
@@ -133,16 +108,9 @@ paths:
   '/status/parameters':
     get:
       summary: List of API parameters
-      description: returns list of parameters that can be configured in environment files
+      description: Returns list of parameters that can be configured in environment files.
       tags:
         - Status
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: List of parameters and values
@@ -150,6 +118,7 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/Parameters'
+
   '/utilities/ls':
     parameters:
       - in: header
@@ -166,26 +135,20 @@ paths:
       tags:
         - Utilities
       parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
         - name: targetPath
           in: query
-          description: Absolute filesystem path
+          description: Absolute path to destination
           required: true
           schema:
             type: string
           allowReserved: true
         - name: showhidden
           in: query
-          description: do not ignore entries starting with '.'
+          description: Show entries starting with '.'
           schema:
             type: boolean
-        - $ref: '#/components/parameters/pageSize'
-        - $ref: '#/components/parameters/pageNumber'
+        # - $ref: '#/components/parameters/pageSize'
+        # - $ref: '#/components/parameters/pageNumber'
       responses:
         '200':
           description: List of contents of path
@@ -222,12 +185,6 @@ paths:
                 type: string
   '/utilities/mkdir':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -236,23 +193,27 @@ paths:
           type: string
     post:
       summary: Creates a directory
-      description: 'Create a directory at the specified path on the {X-Machine-Name} filesystem'
+      description: 'Create a directory at the specified path on the {X-Machine-Name} filesystem.'
       tags:
         - Utilities
-      parameters:
-        - name: targetPath
-          in: query
-          description: Filesystem path
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: p
-          in: query
-          description: 'No error if existing, make parent directories as needed'
-          allowEmptyValue: true
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+                p:
+                  type: string
+                  description: No error if existing, make parent directories as needed
+              required:
+                - targetPath
+              example:
+                targetPath: /home/user/newdir
+                p:
       responses:
         '201':
           description: Directory created
@@ -298,31 +259,29 @@ paths:
     put:
       summary: 'Rename/move a file, directory, or symlink'
       description: >-
-        Rename/move a file, directory, or symlink at the specified old path to
-        the new path on the {X-Machine-Name} filesystem
+        Rename/move a file, directory, or symlink at the sourcePath to
+        the targetPath on the {X-Machine-Name} filesystem.
       tags:
         - Utilities
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - name: sourcePath
-          in: query
-          description: Absolute path to source
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: targetPath
-          in: query
-          description: Absolute path to destination
-          required: true
-          schema:
-            type: string
-          allowReserved: true
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data': # FIXME: this doesn't work for put requests
+            schema:
+              type: object
+              properties:
+                sourcePath:
+                  type: string
+                  description: Absolute path to source
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+              required:
+                - sourcePath
+                - targetPath
+              example:
+                sourcePath: /home/user/file
+                targetPath: /home/user/file-renamed
       responses:
         '200':
           description: Success to rename file or directory
@@ -363,12 +322,6 @@ paths:
                 type: string
   '/utilities/chmod':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -377,25 +330,28 @@ paths:
           type: string
     put:
       summary: Change file mode bits
-      description: Change the file mod bits of a given file according to the specified mode
+      description: Change the file mod bits of a given file according to the specified mode.
       tags:
         - Utilities
-      parameters:
-        - name: targetPath
-          in: query
-          description: Absolute filesystem path to file
-          required: true
-          allowEmptyValue: false
-          schema:
-            type: string
-          allowReserved: true
-        - name: mode
-          in: query
-          description: Same as numeric mode of linux chmod tool
-          required: true
-          allowEmptyValue: false
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data': # FIXME: this doesn't work for put requests
+            schema:
+              type: object
+              properties:
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+                mode:
+                  type: string
+                  description: Same as numeric mode of linux chmod tool
+              required:
+                - targetPath
+                - mode
+              example:
+                targetPath: /home/user/file
+                mode: "700"
       responses:
         '200':
           description: Operation completed
@@ -405,7 +361,7 @@ paths:
                 $ref: '#/components/schemas/Application-output'
         '400':
           description: Error in chmod operation
-          content: 
+          content:
             text/plain:
               schema:
                 type: string
@@ -436,12 +392,6 @@ paths:
                 type: string
   '/utilities/chown':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -455,27 +405,28 @@ paths:
         or group information is passed, only that information will be updated.
       tags:
         - Utilities
-      parameters:
-        - name: targetPath
-          in: query
-          description: Absolute filesystem path to file
-          required: true
-          allowEmptyValue: false
-          schema:
-            type: string
-          allowReserved: true
-        - name: owner
-          in: query
-          required: false
-          allowEmptyValue: false
-          schema:
-            type: string
-        - name: group
-          in: query
-          required: false
-          allowEmptyValue: false
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+                owner:
+                  type: string
+                  description: Owner username for target
+                group:
+                  type: string
+                  description: group username for target
+              required:
+                - targetPath
+              example:
+                targetPath: /home/user/file
+                owner: newOwner
+                group: newGroup
       responses:
         '200':
           description: Operation completed
@@ -485,7 +436,7 @@ paths:
                 $ref: '#/components/schemas/Application-output'
         '400':
           description: Error in chwon operation
-          content: 
+          content:
             text/plain:
               schema:
                 type: string
@@ -520,12 +471,6 @@ paths:
                 type: string
   '/utilities/copy':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -535,25 +480,28 @@ paths:
     post:
       summary: Copy file from a filesystem path to another
       description: >-
-        Copies file from {sorucePath} to {targetpath}.
+        Copies file from {sourcePath} to {targetPath}.
       tags:
         - Utilities
-      parameters:
-        - name: sourcePath
-          in: query
-          description: Absolute filesystem path to file to be copied
-          required: true
-          allowEmptyValue: false
-          schema:
-            type: string
-          allowReserved: true
-        - name: targetPath
-          in: query
-          description: Absolute filesystem path where the {source} is copied
-          required: true
-          allowEmptyValue: false
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                sourcePath:
+                  type: string
+                  description: Absolute filesystem path to file to be copied
+                targetPath:
+                  type: string
+                  description: Absolute filesystem path where the {sourcePath} is copied
+              required:
+                - sourcePath
+                - targetPath
+              example:
+                sourcePath: /home/user/file
+                targetPath: /home/user/file-copied
       responses:
         '201':
           description: Object copy succesful
@@ -563,7 +511,7 @@ paths:
                 $ref: '#/components/schemas/Application-output'
         '400':
           description: Error in copy operation
-          content: 
+          content:
             text/plain:
               schema:
                 type: string
@@ -598,12 +546,6 @@ paths:
                 type: string
   '/utilities/file':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -612,7 +554,8 @@ paths:
           type: string
     get:
       summary: determine file type
-      description: Uses the file linux application to determine the type of a file
+      description: Uses the file linux application to determine the type of a file on the
+        {X-Machine-Name} filesystem.
       tags:
         - Utilities
       parameters:
@@ -633,7 +576,7 @@ paths:
                 $ref: '#/components/schemas/Application-output'
         '400':
           description: Error in file operation
-          content: 
+          content:
             text/plain:
               schema:
                 type: string
@@ -666,12 +609,6 @@ paths:
                 type: string
   '/utilities/symlink':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -680,24 +617,30 @@ paths:
           type: string
     post:
       summary: Create a symlink
-      description: Create a symbolic link (symlink) on a machine filesystem
+      description: Create a symbolic link (symlink) on the
+        {X-Machine-Name} filesystem.
       tags:
         - Utilities
-      parameters:
-        - name: targetPath
-          in: query
-          description: path to target that the symlink will point to
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: linkPath
-          in: query
-          description: absolute path to the new symlink
-          required: true
-          schema:
-            type: string
-          allowReserved: true
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                linkPath:
+                  type: string
+                  description: Absolute path to the new symlink
+                targetPath:
+                  type: string
+                  description: Absolute filesystem path to target that the symlink will point to
+              required:
+                - linkPath
+                - targetPath
+              example:
+                targetPath: /home/user/file
+                linkPath: /home/user/file-linked
+
       responses:
         '201':
           description: Success create the symlink
@@ -734,12 +677,6 @@ paths:
                 type: string
   '/utilities/download':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -749,14 +686,14 @@ paths:
     get:
       summary: Download a small file
       description: >-
-        'Blocking call that returns the file from the specified path on the
-        {X-Machine-Name} filesystem.'
+        Blocking call that returns the file from the specified path on the
+        {X-Machine-Name} filesystem.
       tags:
         - Utilities
       parameters:
         - name: sourcePath
           in: query
-          description: path to the file to download
+          description: Path to the file to download
           required: true
           schema:
             type: string
@@ -794,12 +731,6 @@ paths:
                 type: string
   '/utilities/upload':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -811,27 +742,26 @@ paths:
       description: 'Uploads a file to the specified path on the {X-Machine-Name} filesystem.'
       tags:
         - Utilities
-      parameters:
-        - name: targetPath
-          in: query
-          description: >-
-            target path to the location where file will be uploaded to on the
-            {X-Machine-Name} filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
       requestBody:
-        description: File to be uploaded
         required: true
         content:
-          '*/*':
+          'multipart/form-data':
             schema:
               type: object
               properties:
                 file:
                   type: string
                   format: binary
+                  description: File to be uploaded
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+              required:
+                - file
+                - targetPath
+              example:
+                file: "@/home/local/file"
+                targetPath: /home/user/remotefile
       responses:
         '201':
           description: File upload successful
@@ -860,12 +790,6 @@ paths:
                 type: string
   '/utilities/rm':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -877,17 +801,20 @@ paths:
       description: 'Delete a file to the specified path on the {X-Machine-Name} filesystem.'
       tags:
         - Utilities
-      parameters:
-        - name: targetPath
-          in: query
-          description: >-
-            target path to the location of the file that will be deleted on
-            {X-Machine-Name} filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-      
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data': # FIXME
+            schema:
+              type: object
+              properties:
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+              required:
+                - targetPath
+              example:
+                targetPath: /home/user/remotefile
       responses:
         '204':
           description: File deletion successful
@@ -917,15 +844,9 @@ paths:
             X-Timeout:
               description: Command has finished with timeout signal
               schema:
-                type: string 
+                type: string
   '/compute/jobs':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -944,16 +865,18 @@ paths:
       tags:
         - Compute
       requestBody:
-        description: SBATCH script file to be submitted to SLURM
         required: true
         content:
-          '*/*':
+          'multipart/form-data':
             schema:
               type: object
               properties:
                 file:
                   type: string
                   format: binary
+                  description: SBATCH script file to be submitted to SLURM
+              required:
+                - file
       responses:
         '201':
           description: Task for job creation queued successfully
@@ -986,16 +909,10 @@ paths:
                 type: integer
     get:
       summary: Retrieves information from all jobs
-      description: Information about jobs on the SLURM scheduling queue (squeue)
+      description: Information about jobs on the SLURM scheduling queue. This call uses the `squeue` command.
       tags:
         - Compute
       parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
         - name: jobs
           in: query
           description: Comma-separated list of job IDs to retrieve.
@@ -1033,12 +950,6 @@ paths:
                 type: integer
   '/compute/jobs/{jobid}':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -1053,7 +964,7 @@ paths:
           type: string
     get:
       summary: Retrieves information from a job
-      description: Information about a jobs on the SLURM scheduling queue (squeue)
+      description: Information about a job on the SLURM scheduling queue. This call uses the `squeue` command.
       tags:
         - Compute
       responses:
@@ -1084,21 +995,9 @@ paths:
                 type: integer
     delete:
       summary: Delete Job
-      description: Cancel job from SLURM using scancel command
+      description: Cancel job from SLURM, using the `scancel` command.
       tags:
         - Compute
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - name: jobs
-          in: query
-          description: Job id to delete.
-          schema:
-            type: string
       responses:
         '204':
           description: Job deleted
@@ -1127,12 +1026,6 @@ paths:
                 type: integer
   '/compute/acct':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - in: header
         name: X-Machine-Name
         description: The system name
@@ -1143,13 +1036,13 @@ paths:
       summary: Job account information
       description: >-
         Reports accounting data of job in the SLURM job accounting log, this
-        include information from completed jobs
+        includes information from completed jobs. This call uses the `sacct` command.
       tags:
         - Compute
       parameters:
         - name: jobs
           in: query
-          description: Comma-separated list of job IDs to retrieve.
+          description: Comma-separated list of job IDs to retrieve
           schema:
             type: array
             items:
@@ -1163,17 +1056,17 @@ paths:
             MM/DD[/YY]-HH:MM[:SS]
             YYYY-MM-DD[THH:MM[:SS]]
           required: false
-          schema: 
+          schema:
             type: string
         - name: endtime
           in: query
-          description: End time (and/or date) of sacct query. Allowed formats are 
+          description: End time (and/or date) of sacct query. Allowed formats are
             HH:MM[:SS] [AM|PM]
             MMDD[YY] or MM/DD[/YY] or MM.DD[.YY]
             MM/DD[/YY]-HH:MM[:SS]
             YYYY-MM-DD[THH:MM[:SS]]
           required: false
-          schema: 
+          schema:
             type: string
       responses:
         '200':
@@ -1206,53 +1099,50 @@ paths:
       summary: rsync
       description: >-
         Data transfer between internal CSCS file systems. To transfer files and
-        folders from /users, /project or /store to the /scratch file systems for
+        folders from `/users`, `/project` or `/store` to the `/scratch` file systems for
         stage-in or stage-out jobs. Reference:
         https://user.cscs.ch/storage/transfer/internal/
       tags:
         - Storage
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - name: sourcePath
-          in: query
-          description: source path to the location filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: targetPath
-          in: query
-          description: target path to the location filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: jobName
-          in: query
-          description: job name the rsync operation
-          schema:
-            type: string
-        - name: time
-          in: query
-          description: >-
-            'Limit on the total run time of the rsync. Acceptable time formats 
-            \'minutes\',   \'minutes:seconds\',   \'hours:minutes:seconds\',
-            \'days-hours\', \'days-hours:minutes\' and
-            \'days-hours:minutes:seconds\'. Note: for stage-in queue a slurm
-            xfer job.'
-          schema:
-            type: string
-            default: '02:00:00'
-        - name: stageOutJobId
-          in: query
-          description: Move data after job with id 'stageOutJobId' is completed
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                sourcePath:
+                  type: string
+                  description: Source path to the location filesystem
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+                jobName:
+                  type: string
+                  description: job name the rsync operation
+                  default: rsync-job
+                time:
+                  type: string
+                  description: >-
+                    Limit on the total run time of the rsync. Acceptable time formats
+                    \'minutes\',   \'minutes:seconds\',   \'hours:minutes:seconds\',
+                    \'days-hours\', \'days-hours:minutes\' and
+                    \'days-hours:minutes:seconds\'. Note: for stage-in queue a slurm
+                    xfer job.
+                  default: '02:00:00'
+                stageOutJobId:
+                  type: string
+                  description: Move data after job with id {stageOutJobId} is completed
+                  default: null
+              required:
+                - sourcePath
+                - targetPath
+              example:
+                sourcePath: /home/user/origin
+                targetPath: /home/user/destination
+                jobName: rsync-firecrest-job
+                stageOutJobId: "123456"
+                time: "2-03:00:00"
       responses:
         '201':
           description: operation queued. Task Id returned.
@@ -1294,48 +1184,45 @@ paths:
         https://user.cscs.ch/storage/data_transfer/internal_transfer/'
       tags:
         - Storage
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - name: sourcePath
-          in: query
-          description: source path to the location filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: targetPath
-          in: query
-          description: target path to the location filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: jobName
-          in: query
-          description: job name the operation
-          schema:
-            type: string
-        - name: time
-          in: query
-          description: >-
-            'Limit on the total run time of the rsync. Acceptable time formats 
-            \'minutes\',   \'minutes:seconds\',   \'hours:minutes:seconds\',
-            \'days-hours\', \'days-hours:minutes\' and
-            \'days-hours:minutes:seconds\'. Note: for stage-in queue a slurm
-            xfer job.'
-          schema:
-            type: string
-            default: '02:00:00'
-        - name: stageOutJobId
-          in: query
-          description: Perform operation after job with id 'stageOutJobId' is completed
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                sourcePath:
+                  type: string
+                  description: source path to the location filesystem
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+                jobName:
+                  type: string
+                  description: job name the rename operation
+                  default: mv-job
+                time:
+                  type: string
+                  description: >-
+                    'Limit on the total run time of the rename. Acceptable time formats
+                    \'minutes\',   \'minutes:seconds\',   \'hours:minutes:seconds\',
+                    \'days-hours\', \'days-hours:minutes\' and
+                    \'days-hours:minutes:seconds\'. Note: for stage-in queue a slurm
+                    xfer job.'
+                  default: '02:00:00'
+                stageOutJobId:
+                  type: string
+                  description: Move data after job with id {stageOutJobId} is completed
+                  default: null
+              required:
+                - sourcePath
+                - targetPath
+              example:
+                sourcePath: /home/user/origin
+                targetPath: /home/user/destination
+                jobName: mv-firecrest-job
+                stageOutJobId: "123456"
+                time: "2-03:00:00"
       responses:
         '201':
           description: operation queued. Task Id returned.
@@ -1377,48 +1264,45 @@ paths:
         https://user.cscs.ch/storage/data_transfer/internal_transfer/'
       tags:
         - Storage
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - name: sourcePath
-          in: query
-          description: source path to the filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: targetPath
-          in: query
-          description: target path to the filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: jobName
-          in: query
-          description: job name the operation
-          schema:
-            type: string
-        - name: time
-          in: query
-          description: >-
-            'Limit on the total run time of the rsync. Acceptable time formats 
-            \'minutes\',   \'minutes:seconds\',   \'hours:minutes:seconds\',
-            \'days-hours\', \'days-hours:minutes\' and
-            \'days-hours:minutes:seconds\'. Note: for stage-in queue a slurm
-            xfer job.'
-          schema:
-            type: string
-            default: '02:00:00'
-        - name: stageOutJobId
-          in: query
-          description: Perform operation after job with id 'stageOutJobId' is completed
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                sourcePath:
+                  type: string
+                  description: source path to the location filesystem
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+                jobName:
+                  type: string
+                  description: job name the copy operation
+                  default: cp-job
+                time:
+                  type: string
+                  description: >-
+                    'Limit on the total run time of the copy. Acceptable time formats
+                    \'minutes\',   \'minutes:seconds\',   \'hours:minutes:seconds\',
+                    \'days-hours\', \'days-hours:minutes\' and
+                    \'days-hours:minutes:seconds\'. Note: for stage-in queue a slurm
+                    xfer job.'
+                  default: '02:00:00'
+                stageOutJobId:
+                  type: string
+                  description: Copy data after job with id {stageOutJobId} is completed
+                  default: null
+              required:
+                - sourcePath
+                - targetPath
+              example:
+                sourcePath: /home/user/origin
+                targetPath: /home/user/destination
+                jobName: cp-firecrest-job
+                stageOutJobId: "123456"
+                time: "2-03:00:00"
       responses:
         '201':
           description: operation queued. Task Id returned.
@@ -1460,41 +1344,40 @@ paths:
         https://user.cscs.ch/storage/data_transfer/internal_transfer/'
       tags:
         - Storage
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - name: targetPath
-          in: query
-          description: target path to the filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: jobName
-          in: query
-          description: job name the operation
-          schema:
-            type: string
-        - name: time
-          in: query
-          description: >-
-            'Limit on the total run time of the rsync. Acceptable time formats 
-            \'minutes\',   \'minutes:seconds\',   \'hours:minutes:seconds\',
-            \'days-hours\', \'days-hours:minutes\' and
-            \'days-hours:minutes:seconds\'. Note: for stage-in queue a slurm
-            xfer job.'
-          schema:
-            type: string
-            default: '02:00:00'
-        - name: stageOutJobId
-          in: query
-          description: Perform operation after job with id 'stageOutJobId' is completed
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+                jobName:
+                  type: string
+                  description: job name the remove operation
+                  default: rm-job
+                time:
+                  type: string
+                  description: >-
+                    'Limit on the total run time of the rm. Acceptable time formats
+                    \'minutes\',   \'minutes:seconds\',   \'hours:minutes:seconds\',
+                    \'days-hours\', \'days-hours:minutes\' and
+                    \'days-hours:minutes:seconds\'. Note: for stage-in queue a slurm
+                    xfer job.'
+                  default: '02:00:00'
+                stageOutJobId:
+                  type: string
+                  description: Delete data after job with id {stageOutJobId} is completed
+                  default: null
+              required:
+                - targetPath
+              example:
+                targetPath: /home/user/file-to-delete
+                jobName: rm-firecrest-job
+                stageOutJobId: "123456"
+                time: "2-03:00:00"
       responses:
         '201':
           description: operation queued. Task Id returned.
@@ -1530,31 +1413,29 @@ paths:
         task that will provide a persisten URL at which the target file can be
         uploaded to, the persistent URL is encoded with a random hash and is
         available for an extended period of time (it does not depend on the
-        lifetime of the OIDC token). Once the file has been uploaded to the file server, user must call /upload-finished with task id provided by Task microservice.
-        
+        lifetime of the OIDC token).
+
       tags:
         - Storage
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - name: sourcePath
-          in: query
-          description: source path of the file in local machine
-          required: true
-          schema:
-            type: string
-          allowReserved: true
-        - name: targetPath
-          in: query
-          description: target path to the filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                sourcePath:
+                  type: string
+                  description: source path to the file in local machine
+                targetPath:
+                  type: string
+                  description: Absolute path to destination
+              required:
+                - sourcePath
+                - targetPath
+              example:
+                sourcePath: /home/local_user/origin
+                targetPath: /home/user/destination
       responses:
         '201':
           description: operation queued. Task Id returned.
@@ -1581,19 +1462,21 @@ paths:
               description: targetPath is an invalid path.
               schema:
                 type: integer
+            X-Not-A-Directory:
+              description: targetPath is not a directory
+              schema:
+                type: string
+            X-Error:
+              description: Error
+              schema:
+                type: string
     put:
-      tags: 
+      tags:
         - Storage
       summary: Upload to Object Storage finished notification
       description: >-
         Once upload to file server has completed, user must notify this to Storage microservice in order to move file to targetPath.
       parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
         - in: header
           name: X-Task-ID
           description: taskid of related task created on POST upload call
@@ -1641,7 +1524,6 @@ paths:
         '200':
           description: object start to move to targetPath
       deprecated: true
-        
   '/storage/xfer-external/download':
     post:
       summary: Download a file
@@ -1654,20 +1536,20 @@ paths:
         the lifetime of the OIDC token).
       tags:
         - Storage
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
-        - name: sourcePath
-          in: query
-          description: source path to the filesystem
-          required: true
-          schema:
-            type: string
-          allowReserved: true
+      requestBody:
+        required: true
+        content:
+          'multipart/form-data':
+            schema:
+              type: object
+              properties:
+                sourcePath:
+                  type: string
+                  description: source path to the file in remote filesystem
+              required:
+                - sourcePath
+              example:
+                sourcePath: /home/user/file
       responses:
         '201':
           description: operation queued. Task Id returned.
@@ -1685,28 +1567,30 @@ paths:
             X-Permission-Denied:
               description: User does not have permissions to access path
               schema:
-                type: integer
+                type: string
             X-Not-Found:
               description: targetPath not found
               schema:
-                type: integer
+                type: string
             X-Invalid-Path:
               description: targetPath is an invalid path.
               schema:
-                type: integer
-  '/tasks':
+                type: string
+            X-A-Directory:
+              description: targetPath is a directory, can't download directories
+              schema:
+                type: string
+            X-Error:
+              description: Error
+              schema:
+                type: string
+
+  '/tasks/':
     get:
-      summary: returns all tasks
-      description: List all recorded tasks and their status
+      summary: Returns all tasks
+      description: List all recorded tasks and their status.
       tags:
         - Tasks
-      parameters:
-        - name: Authorization
-          in: header
-          description: authorization token
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: tasks in queue
@@ -1724,12 +1608,6 @@ paths:
     #      description: task id
   '/tasks/{taskid}':
     parameters:
-      - name: Authorization
-        in: header
-        description: authorization token
-        required: true
-        schema:
-          type: string
       - name: taskid
         in: path
         description: id of task
@@ -1737,8 +1615,8 @@ paths:
         schema:
           type: string
     get:
-      summary: task status information
-      description: A long running task progress and result is tracked through a task id
+      summary: Task status information
+      description: A long running task progress and result is tracked through a {taskid}.
       tags:
         - Tasks
       responses:
@@ -1766,7 +1644,13 @@ paths:
     #      description: Task deleted
     #    '400':
     #      description: Failed to delete task
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT    # optional, arbitrary value for documentation purposes
   parameters:
     machinename:
       name: machineName
@@ -1884,8 +1768,6 @@ components:
         - service
       properties:
         service:
-          type: string
-        endpoint:
           type: string
         status:
           type: string
@@ -2006,3 +1888,5 @@ tags:
       state of the request.
   - name: Tasks
     description: Access status and response of compute and storage tasks.
+security:
+  - bearerAuth: []
