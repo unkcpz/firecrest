@@ -3,4 +3,4 @@ response = requests.get(
     headers={'Authorization': f'Bearer {TOKEN}'}
 )
 
-handle_response(response)
+tutorial.handle_response(response)

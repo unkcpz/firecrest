@@ -1,6 +1,6 @@
-1. The response header will include: "X-Invalid-Path": "/home/llama2 is an invalid path"
+1. The response header will include: "X-Permission-Denied": "User does not have permissions to access machine or path"
 
-2. The response header will include: "X-Permission-Denied": "User does not have permissions to access machine or path"
+2. The response header will include: "X-Invalid-Path": "/users/firectut is an invalid path"
 
 In both cases the json will be the same:
 {

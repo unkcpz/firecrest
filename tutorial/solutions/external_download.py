@@ -1,4 +1,4 @@
-sourcePath = '/home/llama/res.txt'
+sourcePath = '/scratch/snx3000/{USER}/'
 
 response = requests.post(
     url=f'{FIRECREST_IP}/storage/xfer-external/download',
@@ -6,4 +6,4 @@ response = requests.post(
     data={'sourcePath': sourcePath}
 )
 
-handle_response(response)
+tutorial.handle_response(response)
