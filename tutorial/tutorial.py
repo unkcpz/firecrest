@@ -33,7 +33,7 @@ def show_utilities():
 
         return display(Markdown(markdown_str))
 
-    slider = wg.IntSlider(min=1, max=3, step=len(glob.glob('images/utilities_upload/')), layout=wg.Layout(width="100%"))
+    slider = wg.IntSlider(min=1, max=len(glob.glob("images/utilities_upload/*")), step=1, layout=wg.Layout(width="100%"))
     slideshow = wg.Box(
         [wg.interactive_output(show_figure, {"step": slider})],
         layout=wg.Layout(width="70%"),
@@ -126,7 +126,7 @@ def show_compute_sbatch():
 def show_compute_squeue():
     def show_figure(step):
         return display(
-            Image(filename=f"images/compute/tutorial_{step}.jpeg", width="100%")
+            Image(filename=f"images/compute_squeue/compute_squeue {step}.jpeg", width="100%")
         )
 
     def markdown_explanation(step):
@@ -213,7 +213,7 @@ def show_compute_squeue():
 
         return display(Markdown(markdown_str))
 
-    slider = wg.IntSlider(min=0, max=16, step=1, layout=wg.Layout(width="100%"))
+    slider = wg.IntSlider(min=1, max=len(glob.glob("images/compute_squeue/*")), step=1, layout=wg.Layout(width="100%"))
     slideshow = wg.Box(
         [wg.interactive_output(show_figure, {"step": slider})],
         layout=wg.Layout(width="70%"),
@@ -260,7 +260,7 @@ def show_external_upload():
 
         return display(Markdown(markdown_str))
 
-    slider = wg.IntSlider(min=1, max=15, step=1, layout=wg.Layout(width="100%"))
+    slider = wg.IntSlider(min=1, max=len(glob.glob("images/external_upload/external_upload*")), step=1, layout=wg.Layout(width="100%"))
     slideshow = wg.Box(
         [wg.interactive_output(show_figure, {"step": slider})],
         layout=wg.Layout(width="70%"),
@@ -278,7 +278,7 @@ def show_external_download():
     def show_figure(step):
         return display(
             Image(
-                filename=f"images/external_download/tutorial_{step}.jpeg", width="100%"
+                filename=f"images/external_download/external_download {step}.jpeg", width="100%"
             )
         )
 
@@ -306,7 +306,7 @@ def show_external_download():
 
         return display(Markdown(markdown_str))
 
-    slider = wg.IntSlider(min=0, max=7, step=1, layout=wg.Layout(width="100%"))
+    slider = wg.IntSlider(min=1, max=len(glob.glob("images/external_download/external_download*")), step=1, layout=wg.Layout(width="100%"))
     slideshow = wg.Box(
         [wg.interactive_output(show_figure, {"step": slider})],
         layout=wg.Layout(width="70%"),
