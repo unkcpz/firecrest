@@ -97,7 +97,7 @@ markdown_strs = {
     ],
     "external_download": [
         "* For files >5MB we have to use the Storage Microservice.\n"
-        "* We will dwonload the file through a staging area.\n"
+        "* We will download the file through a staging area.\n"
         "* We keep track of the task through a FirecREST task and its status:\n\n",
         external_download_bold_markdown(0),
         external_download_bold_markdown(1),
