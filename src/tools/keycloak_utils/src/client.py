@@ -19,8 +19,7 @@ def test_status():
     """Test the service status endpoint of firecrest: firecrest_url/status/services
     """
 
-
-    headers = {f"Authorization: Bearer {keycloak.get_access_token()}"}
+    headers = {f"Authorization": f"Bearer {keycloak.get_access_token()}"}
 
     resp = requests.get(f"{firecrest_url}/status/services", headers=headers)
 
