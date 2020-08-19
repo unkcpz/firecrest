@@ -1,6 +1,5 @@
 import keycloak_utils
 import json
-import time
 import requests
 
 
@@ -11,7 +10,7 @@ token_uri = "" # URI of the token endpoint in keycloak server "https://auth.your
 firecrest_url = "" # URL of the firecrest instance where to connect
 
 # Create a keycloak service account object
-keycloak = keycloak_utils.KeycloakServiceAccount(client_id, client_secret, token_uri, debug=True)
+keycloak = keycloak_utils.KeycloakServiceAccount(client_id, client_secret, token_uri, debug=False)
 
 # the decorator logins and refresh without user or client intervention
 @keycloak.service_account_login
