@@ -132,16 +132,18 @@ class KeycloakServiceAccount(object):
                 active = resp.json()["active"]
     
                 if active:
-                    logging.info("Token is active")
+                    if self.debug:
+                        logging.info("Token is active")
                     return True
-    
-                logging.info("Token no longer valid")
+                if self.debug:
+                    logging.info("Token no longer valid")
                 return False
     
             return False
         except Exception as e:
-            logging.error(f"Error calling keycloak: {type(e)}")
-            logging.error(f"{e}")
+            if self.debug:
+                logging.error(f"Error calling keycloak: {type(e)}")
+                logging.error(f"{e}")
             return False
     
     # use refresh_token to get a new access_token
@@ -179,11 +181,13 @@ class KeycloakServiceAccount(object):
                 logging.info(f"Response from {self.TOKEN_URI}: {resp.json()}")
                 
             if not resp.ok:
-                logging.error(f"Error: {resp.json()['error_description']}")         
+                if self.debug:
+                    logging.error(f"Error: {resp.json()['error_description']}")         
                 return None
         except Exception as e:
-            logging.error(f"Error calling Keycloak: {type(e)}")
-            logging.error(f"{e}")
+            if self.debug:
+                logging.error(f"Error calling Keycloak: {type(e)}")
+                logging.error(f"{e}")
             return None
     
     
@@ -207,8 +211,8 @@ class KeycloakServiceAccount(object):
         -------
             {"refresh_token":refresh_token, "access_token": access_token} (dict) : refresh and access token in a dictionary format
         """
-        
-        logging.info("Getting new access & refresh tokens")
+        if self.debug:
+            logging.info("Getting new access & refresh tokens")
         
         # curl -X POST -H "Content-Type: application/x-www-form-urlencoded" \
         # -d 'grant_type=client_credentials&client_id=CLIENT_ID&client_secret=CLIENT_SECRET_KEY' \
@@ -228,11 +232,13 @@ class KeycloakServiceAccount(object):
                 logging.info(f"Status code: {resp.status_code}")
     
             if not resp.ok:
-                logging.error("Invalid autentication")
+                if self.debug:
+                    logging.error("Invalid autentication")
                 return None
         except Exception as e:
-            logging.error(f"Error calling Keycloak: {type(e)}")
-            logging.error(f"{e}")
+            if self.debug:
+                logging.error(f"Error calling Keycloak: {type(e)}")
+                logging.error(f"{e}")
             return None
     
         access_token = resp.json()["access_token"]
@@ -279,6 +285,7 @@ class KeycloakServiceAccount(object):
                 self.TOKENS["refresh_token"] = tokens["refresh_token"]
                 return func(*args, **kwargs)
             # if failed, then can be logged in KC
-            logging.error("Can't logging with keycloak server")            
+            logging.error("Can't logging with keycloak server")
+                        
             return {"error": "Can't login with keycloak server"}, 401
         return wrapper_service_account_login
