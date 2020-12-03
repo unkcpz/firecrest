@@ -3,14 +3,18 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
+    annotations:
+      kompose.cmd: kompose convert -f docker-compose.yaml -o f7t_keycloak.yaml
+      kompose.version: 1.1.0 (36652f6)
+    creationTimestamp: null
     labels:
       io.kompose.service: keycloak
     name: keycloak
   spec:
     ports:
-    - name: "8080"
-      port: 8080
-      targetPort: 8080    
+    - name: "28080"
+      port: 28080
+      targetPort: 8080
     selector:
       io.kompose.service: keycloak
   status:
@@ -18,6 +22,10 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
+    annotations:
+      kompose.cmd: kompose convert -f docker-compose.yaml -o f7t_keycloak.yaml
+      kompose.version: 1.1.0 (36652f6)
+    creationTimestamp: null
     labels:
       io.kompose.service: keycloak
     name: keycloak
@@ -33,15 +41,11 @@ items:
         labels:
           io.kompose.service: keycloak
       spec:
-        nodeSelector:
-          kubernetes.io/hostname: starlex3  
-        volumes:
-        - name: f7t-keycloak-vol
-          hostPath:
-            path: /shared/firecrest/keycloak
-            type: Directory
+        nodeSelector: 
+          kubernetes.io/hostname: starlex3
         containers:
-        - env:
+        - image: jboss/keycloak:4.8.3.Final
+          env:
           - name: DB_VENDOR
             value: H2
           - name: DIR_DATA
@@ -58,16 +62,22 @@ items:
             value: admin2
           - name: KEYCLOAK_USER
             value: admin
-          image: jboss/keycloak:4.8.3.Final
           name: f7t-keycloak
           ports:
           - containerPort: 8080
             hostIP: 127.0.0.1
           volumeMounts:
-          - mountPath: /var/tmp
-            name: f7t-keycloak-vol  
+          - mountPath: /var/tmp/
+            name: f7t-keycloak-config
           resources: {}
-        restartPolicy: Always
-  status: {}
+        volumes:
+        - name: f7t-keycloak-config
+          configMap:
+            name: f7t-keyclok-config
+#        - name: f7t-keycloak-vol
+#          hostPath:
+#            path: /home/shared/firecrest/keycloak/
+#            type: Directory
 kind: List
-metedata: {}
+metadata: {}
+
