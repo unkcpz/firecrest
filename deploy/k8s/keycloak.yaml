@@ -1,0 +1,73 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      io.kompose.service: keycloak
+    name: keycloak
+  spec:
+    ports:
+    - name: "8080"
+      port: 8080
+      targetPort: 8080    
+    selector:
+      io.kompose.service: keycloak
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      io.kompose.service: keycloak
+    name: keycloak
+  spec:
+    replicas: 1
+    strategy: {}
+    selector:
+      matchLabels:
+        io.kompose.service: keycloak
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          io.kompose.service: keycloak
+      spec:
+        nodeSelector:
+          kubernetes.io/hostname: starlex3  
+        volumes:
+        - name: f7t-keycloak-vol
+          hostPath:
+            path: /shared/firecrest/keycloak
+            type: Directory
+        containers:
+        - env:
+          - name: DB_VENDOR
+            value: H2
+          - name: DIR_DATA
+            value: /var/tmp
+          - name: Dkeycloak.migration.realmName
+            value: kcrealm
+          - name: KC_REALM_DISPLAY_NAME
+            value: kcrealm
+          - name: KC_REALM_NAME
+            value: kcrealm
+          - name: KEYCLOAK_IMPORT
+            value: /var/tmp/config.json
+          - name: KEYCLOAK_PASSWORD
+            value: admin2
+          - name: KEYCLOAK_USER
+            value: admin
+          image: jboss/keycloak:4.8.3.Final
+          name: f7t-keycloak
+          ports:
+          - containerPort: 8080
+            hostIP: 127.0.0.1
+          volumeMounts:
+          - mountPath: /var/tmp
+            name: f7t-keycloak-vol  
+          resources: {}
+        restartPolicy: Always
+  status: {}
+kind: List
+metedata: {}
