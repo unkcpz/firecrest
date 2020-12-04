@@ -1,6 +1,12 @@
 apiVersion: v1
 items:
 - apiVersion: v1
+  kind: Secret
+  metadata:
+    name: f7t-keycloak-secret
+  data:
+    KEYCLOAK_PASSWORD: YWRtaW4yCg==
+- apiVersion: v1
   kind: Service
   metadata:
     annotations:
@@ -12,9 +18,12 @@ items:
     name: keycloak
   spec:
     ports:
-    - name: "28080"
-      port: 28080
+    - name: "8080"
+      port: 8080
       targetPort: 8080
+    - name: "9990"
+      port: 9990
+      targetPort: 9990
     selector:
       io.kompose.service: keycloak
   status:
@@ -59,25 +68,28 @@ items:
           - name: KEYCLOAK_IMPORT
             value: /var/tmp/config.json
           - name: KEYCLOAK_PASSWORD
-            value: admin2
+            valueFrom:
+              secretKeyRef:
+                name: f7t-keycloak-secret
+                key: KEYCLOAK_PASSWORD
           - name: KEYCLOAK_USER
             value: admin
           name: f7t-keycloak
           ports:
           - containerPort: 8080
             hostIP: 127.0.0.1
+          - containerPort: 9990
+            hostIP: 127.0.0.1
           volumeMounts:
           - mountPath: /var/tmp/
-            name: f7t-keycloak-config
+            name: f7t-keycloak-configmap
           resources: {}
         volumes:
-        - name: f7t-keycloak-config
+        - name: f7t-keycloak-configmap
           configMap:
-            name: f7t-keyclok-config
-#        - name: f7t-keycloak-vol
-#          hostPath:
-#            path: /home/shared/firecrest/keycloak/
-#            type: Directory
+            name: sample-cm
+        #- name: f7t-keycloak-vol
+        #  hostPath:
+        #    path: /home/shared/firecrest/keycloak/
+        #    type: Directory
 kind: List
-metadata: {}
-
