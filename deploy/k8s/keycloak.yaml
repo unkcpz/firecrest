@@ -9,14 +9,13 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    annotations:
-      kompose.cmd: kompose convert -f docker-compose.yaml -o f7t_keycloak.yaml
-      kompose.version: 1.1.0 (36652f6)
-    creationTimestamp: null
     labels:
-      io.kompose.service: keycloak
+      app: keycloak
     name: keycloak
   spec:
+    type: ClusterIP
+    selector:
+      app: keycloak
     ports:
     - name: "8080"
       port: 8080
@@ -25,30 +24,25 @@ items:
       port: 9990
       targetPort: 9990
     selector:
-      io.kompose.service: keycloak
+      app: keycloak
   status:
     loadBalancer: {}
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    annotations:
-      kompose.cmd: kompose convert -f docker-compose.yaml -o f7t_keycloak.yaml
-      kompose.version: 1.1.0 (36652f6)
-    creationTimestamp: null
     labels:
-      io.kompose.service: keycloak
+      app: keycloak
     name: keycloak
   spec:
     replicas: 1
     strategy: {}
     selector:
       matchLabels:
-        io.kompose.service: keycloak
+        app: keycloak
     template:
       metadata:
-        creationTimestamp: null
         labels:
-          io.kompose.service: keycloak
+          app: keycloak
       spec:
         nodeSelector: 
           kubernetes.io/hostname: starlex3
@@ -87,9 +81,5 @@ items:
         volumes:
         - name: f7t-keycloak-configmap
           configMap:
-            name: sample-cm
-        #- name: f7t-keycloak-vol
-        #  hostPath:
-        #    path: /home/shared/firecrest/keycloak/
-        #    type: Directory
+            name: f7t-keycloak-cofigmap
 kind: List
