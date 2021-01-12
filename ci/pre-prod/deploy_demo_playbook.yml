@@ -102,7 +102,7 @@
           dockerfile: ./deploy/docker/certificator/Dockerfile
         source: build
         state: present
-        recreate: yes
+        force_source: yes
 
     - name: Certificator
       community.general.docker_container:
@@ -199,7 +199,7 @@
           dockerfile: ./cluster/Dockerfile
         source: build
         state: present
-        recreate: yes
+        force_source: yes
 
     - name: Run dummy cluster
       community.general.docker_container:
