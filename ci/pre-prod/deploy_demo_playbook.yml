@@ -52,6 +52,8 @@
         networks:
               - name: firecrest-internal
                 ipv4_address: "192.168.220.13"
+        state: present
+        force_source: yes
 
     - name: Tasks
       community.general.docker_container:
@@ -98,6 +100,7 @@
           dockerfile: ./deploy/docker/certificator/Dockerfile
         source: build
         state: present
+        force_source: yes
 
     - name: Certificator
       community.general.docker_container:
@@ -216,6 +219,8 @@
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/keycloak/config.json:/var/tmp/config.json:ro"
           - "{{ firecrest_dir }}/deploy/demo/logs/keycloak:/opt/jboss/keycloak/standalone/log/:delegated"
+        state: present
+        force_source: yes
         
     - name: Kong
       community.general.docker_container:
@@ -231,6 +236,8 @@
           - "8000:8000"
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/kong/kong.yml:/kong.yml:ro"
+        state: present
+        force_source: yes
 
     - name: Minio
       community.general.docker_container:
@@ -247,6 +254,8 @@
           - "9000:9000"
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/minio:/data:delegated"  
+        state: present
+        force_source: yes
 
     - name: Opa
       community.general.docker_container:
@@ -261,3 +270,5 @@
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/opa:/opa-files"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
+        state: present
+        force_source: yes
