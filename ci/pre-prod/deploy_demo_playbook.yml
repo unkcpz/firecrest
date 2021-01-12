@@ -52,7 +52,7 @@
         networks:
               - name: firecrest-internal
                 ipv4_address: "192.168.220.13"
-        state: present
+        restart: yes
         recreate: yes
 
     - name: Tasks
@@ -74,7 +74,7 @@
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
-        state: present
+        restart: yes
         recreate: yes
 
     ## Pull certificator image
@@ -119,6 +119,8 @@
           - "{{ firecrest_dir }}/deploy/test-build/environment/keys/user-key.pub:/user-key.pub:ro"
           - "{{ firecrest_dir }}/deploy/test-build/environment/keys/ca-key:/ca-key:ro"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
+        recreate: yes
+        restart: yes
 
     - name: Compute
       community.general.docker_container:
@@ -134,8 +136,8 @@
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/test-build/environment/keys/user-key:/user-key:ro"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
-        state: present
         recreate: yes
+        restart: yes
 
     - name: Status
       community.general.docker_container:
@@ -150,7 +152,7 @@
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
-        state: present
+        restart: yes
         recreate: yes
 
     - name: Storage
@@ -171,7 +173,7 @@
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/test-build/environment/keys/user-key:/user-key:ro"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
-        state: present
+        restart: yes
         recreate: yes
 
     - name: Utilities
@@ -188,7 +190,7 @@
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/test-build/environment/keys/user-key:/user-key:ro"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
-        state: present
+        restart: yes
         recreate: yes
 
     - name: Build dummy cluster image
@@ -229,7 +231,7 @@
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/keycloak/config.json:/var/tmp/config.json:ro"
           - "{{ firecrest_dir }}/deploy/demo/logs/keycloak:/opt/jboss/keycloak/standalone/log/:delegated"
-        state: present
+        restart: yes
         recreate: yes
         
     - name: Kong
@@ -246,7 +248,7 @@
           - "8000:8000"
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/kong/kong.yml:/kong.yml:ro"
-        state: present
+        restart: yes
         recreate: yes
 
     - name: Minio
@@ -264,7 +266,7 @@
           - "9000:9000"
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/minio:/data:delegated"  
-        state: present
+        restart: yes
         recreate: yes
 
     - name: Opa
@@ -280,5 +282,5 @@
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/opa:/opa-files"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
-        state: present
+        restart: yes
         recreate: yes
