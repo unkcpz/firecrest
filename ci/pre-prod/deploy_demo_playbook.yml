@@ -186,6 +186,7 @@
           dockerfile: ./cluster/Dockerfile
         source: build
         state: present
+        force_source: yes
 
     - name: Run dummy cluster
       community.general.docker_container:
