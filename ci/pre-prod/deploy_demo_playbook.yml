@@ -213,6 +213,8 @@
         hostname: cluster
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/logs/cluster/:/var/log/slurm/:delegated"
+        restart: yes
+        recreate: yes
 
     - name: Keycloack
       community.general.docker_container:
