@@ -74,6 +74,8 @@
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
+        state: present
+        recreate: yes
 
     ## Pull certificator image
     #- name: Certificator
@@ -132,6 +134,8 @@
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/test-build/environment/keys/user-key:/user-key:ro"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
+        state: present
+        recreate: yes
 
     - name: Status
       community.general.docker_container:
@@ -146,6 +150,8 @@
         volumes:
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
+        state: present
+        recreate: yes
 
     - name: Storage
       community.general.docker_container:
@@ -165,6 +171,8 @@
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/test-build/environment/keys/user-key:/user-key:ro"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
+        state: present
+        recreate: yes
 
     - name: Utilities
       community.general.docker_container:
@@ -180,6 +188,8 @@
           - "{{ firecrest_dir }}/deploy/demo/logs/firecrest:/var/log:delegated"
           - "{{ firecrest_dir }}/deploy/test-build/environment/keys/user-key:/user-key:ro"
           - "{{ firecrest_dir }}/deploy/demo/ssl:/ssl"
+        state: present
+        recreate: yes
 
     - name: Build dummy cluster image
       community.general.docker_image:
