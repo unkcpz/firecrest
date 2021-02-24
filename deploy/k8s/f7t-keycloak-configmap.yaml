@@ -1513,5 +1513,5 @@ data:
     }
 kind: ConfigMap
 metadata:
-  name: f7t-keycloak-cofigmap
+  name: f7t-keycloak-configmap
   namespace: jdorsch-restricted

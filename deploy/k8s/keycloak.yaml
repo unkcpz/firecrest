@@ -76,10 +76,10 @@ items:
             hostIP: 127.0.0.1
           volumeMounts:
           - mountPath: /var/tmp/
-            name: f7t-keycloak-configmap
+            name: f7t-keycloak-volume
           resources: {}
         volumes:
-        - name: f7t-keycloak-configmap
+        - name: f7t-keycloak-volume
           configMap:
-            name: f7t-keycloak-cofigmap
+            name: f7t-keycloak-configmap
 kind: List
