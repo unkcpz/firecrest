@@ -13,11 +13,10 @@ items:
         labels:
           app: f7t-cluster
       spec:
-        nodeSelector:
-          kubernetes.io/hostname: starlex3 #so it is deployed in here
         containers:
         - name: f7t-cluster
-          image: 148.187.97.229:5000/cluster:k8s-training
+          image: test-build_cluster
+          imagePullPolicy: Never
           ports:
           - containerPort: 22
 kind: List
