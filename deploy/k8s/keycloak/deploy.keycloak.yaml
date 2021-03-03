@@ -17,8 +17,6 @@ items:
         labels:
           app: keycloak
       spec:
-        nodeSelector: 
-          kubernetes.io/hostname: starlex3
         containers:
         - image: jboss/keycloak:4.8.3.Final
           env:

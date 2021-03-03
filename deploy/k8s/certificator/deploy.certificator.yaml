@@ -13,8 +13,6 @@ items:
         labels:
           app: certificator-opa
       spec:
-        nodeSelector:
-          kubernetes.io/hostname: starlex3 #so it is deployed in here
         containers:
         - name: f7t-opa
           image: openpolicyagent/opa:0.22.0
@@ -25,18 +23,18 @@ items:
           - mountPath: /opa-files/
             name: f7t-opa-vol
         - name: f7t-certificador
-          image: 148.187.97.229:5000/certificator:k8s-training
+          image: demo_certificator
           ports:
           - containerPort: 5010
           envFrom:
             - configMapRef:
-                name: common-env-file        
+                name: common-env-file
           volumeMounts:
           - mountPath: /ca-key #since ConfiMap mount
-            name: f7t-cert-vol                    
+            name: f7t-cert-vol
             subPath: ca-key
           - mountPath: /user-key.pub
-            name: f7t-cert-user-pub-vol               
+            name: f7t-cert-user-pub-vol
             subPath: user-key.pub
         volumes:
         - name: f7t-opa-vol
@@ -44,9 +42,9 @@ items:
             name: f7t-opa-configmap
         - name: f7t-cert-vol
           configMap:
-            name: f7t-ca-ssh-keys 
+            name: f7t-ca-ssh-keys
             defaultMode: 0400
         - name: f7t-cert-user-pub-vol
           configMap:
-            name: f7t-user-ssh-pub-keys            
+            name: f7t-user-ssh-pub-keys
 kind: List
