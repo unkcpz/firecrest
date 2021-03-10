@@ -3,7 +3,7 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: f7t-cluster-svc
+    name: f7t-cluster
   spec:
     type: ClusterIP
     selector:
