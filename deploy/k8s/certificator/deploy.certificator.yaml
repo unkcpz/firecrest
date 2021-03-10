@@ -22,8 +22,9 @@ items:
           volumeMounts:
           - mountPath: /opa-files/
             name: f7t-opa-vol
-        - name: f7t-certificador
+        - name: f7t-certificator
           image: demo_certificator
+          imagePullPolicy: Never
           ports:
           - containerPort: 5010
           envFrom:
