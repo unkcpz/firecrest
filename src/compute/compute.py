@@ -74,7 +74,7 @@ def is_jobid(jobid):
             return True
         app.logger.error("Wrong SLURM sbatch return string")
         app.logger.error(f"{jobid} isn't > 0")
-        
+
     except ValueError as e:
         app.logger.error("Wrong SLURM sbatch return string")
         app.logger.error("Couldn't convert to int")
@@ -100,7 +100,7 @@ def extract_jobid(outline):
     if not is_jobid(list_line[-1]):
         # for compatibility reasons if error, returns original string
         return outline
-    
+
     # all clear, conversion is OK
     jobid = int(list_line[-1])
 
@@ -198,7 +198,7 @@ def submit_job_task(auth_header, system_name, system_addr, job_file, job_dir, ta
         app.logger.error(e)
         update_task(task_id, auth_header, async_task.ERROR, e.message)
 
-    
+
 
     #app.logger.info(result)
     return
@@ -273,7 +273,7 @@ def get_slurm_files(auth_header, system_name, system_addr, task_id,job_info,outp
     return control_info
 
 def submit_job_path_task(auth_header,system_name, system_addr,fileName,job_dir, task_id):
-    
+
     try:
         # get scopes from token
         decoded = jwt.decode(auth_header[7:], verify=False)
@@ -296,12 +296,12 @@ def submit_job_path_task(auth_header,system_name, system_addr,fileName,job_dir, 
 
         app.logger.info("scope parameters: " + scopes_parameters)
 
-    
+
     except Exception as e:
         app.logger.error(type(e))
-        
+
         app.logger.error(e.args)
-        
+
 
     action=f"sbatch --chdir={job_dir} {scopes_parameters} -- {fileName}"
 
@@ -323,18 +323,18 @@ def submit_job_path_task(auth_header,system_name, system_addr,fileName,job_dir, 
             return
         err_msg = resp["msg"]
         update_task(task_id, auth_header, async_task.ERROR, err_msg)
-        
+
 
     jobid = extract_jobid(resp["msg"])
 
     msg = {"result":"Job submitted", "jobid":jobid}
 
-    
+
     # now looking for log and err files location
     job_extra_info = get_slurm_files(auth_header, system_name, system_addr, task_id,msg)
 
     update_task(task_id, auth_header,async_task.SUCCESS, job_extra_info,True)
-        
+
 
 ## error handler for files above SIZE_LIMIT -> app.config['MAX_CONTENT_LENGTH']
 @app.errorhandler(413)
@@ -348,9 +348,9 @@ def request_entity_too_large(error):
 @app.route("/jobs/upload",methods=["POST"])
 @check_auth_header
 def submit_job_upload():
-    
+
     auth_header = request.headers[AUTH_HEADER_NAME]
-    
+
     try:
         system_name = request.headers["X-Machine-Name"]
     except KeyError as e:
@@ -477,7 +477,7 @@ def submit_job_path():
             return jsonify(description="Failed to submit job"), 404, header
 
     targetPath = request.form["targetPath"]
-    
+
     if targetPath == None:
         data = jsonify(description="Failed to submit job", error="'targetPath' parameter not set in request")
         return data, 400
@@ -486,7 +486,7 @@ def submit_job_path():
         data = jsonify(description="Failed to submit job", error="'targetPath' parameter value is empty")
         return data, 400
 
-    
+
     # checks if targetPath is a valid path for this user in this machine
     check = is_valid_file(targetPath, auth_header, system_name, system_addr)
 
@@ -498,7 +498,7 @@ def submit_job_path():
     # if error in creating task:
     if task_id == -1:
         return jsonify(description="Failed to submit job",error='Error creating task'), 400
-        
+
     # if targetPath = "/home/testuser/test/sbatch.sh/"
     # split by / and discard last element (the file name): ['', 'home', 'testuser', 'test']
     job_dir_splitted = targetPath.split("/")[:-1]
@@ -508,7 +508,7 @@ def submit_job_path():
         job_dir_splitted = job_dir_splitted[:-1]
 
     job_dir = "/".join(job_dir_splitted)
-    
+
 
     try:
         # asynchronous task creation
@@ -598,7 +598,7 @@ def list_jobs():
 
             for jobid in job_aux_list:
                 if not is_jobid(jobid):
-                    return jsonify(error=f"{jobid} is not a valid job ID", description="Failed to retrieve job information"), 400    
+                    return jsonify(error=f"{jobid} is not a valid job ID", description="Failed to retrieve job information"), 400
 
             job_list="--job={jobs}".format(jobs=jobs)
         except:
@@ -615,7 +615,7 @@ def list_jobs():
         # if error in creating task:
         if task_id == -1:
             return jsonify(description="Failed to retrieve job information",error='Error creating task'), 400
-            
+
         update_task(task_id, auth_header, async_task.QUEUED)
 
         # asynchronous task creation
@@ -705,14 +705,14 @@ def list_job_task(auth_header,system_name, system_addr,action,task_id,pageSize,p
     data = jobs
 
     update_task(task_id, auth_header, async_task.SUCCESS, data, True)
-   
+
 
 
 # Retrieves information from a jobid
 @app.route("/jobs/<jobid>",methods=["GET"])
 @check_auth_header
 def list_job(jobid):
-    
+
     auth_header = request.headers[AUTH_HEADER_NAME]
 
     try:
@@ -763,7 +763,7 @@ def list_job(jobid):
         # if error in creating task:
         if task_id == -1:
             return jsonify(description="Failed to retrieve job information",error='Error creating task'), 400
-            
+
         update_task(task_id, auth_header, async_task.QUEUED)
 
         # asynchronous task creation
@@ -827,7 +827,7 @@ def cancel_job_task(auth_header,system_name, system_addr,action,task_id):
 def cancel_job(jobid):
 
     auth_header = request.headers[AUTH_HEADER_NAME]
-    
+
     try:
         system_name = request.headers["X-Machine-Name"]
     except KeyError as e:
@@ -869,7 +869,7 @@ def cancel_job(jobid):
         # if error in creating task:
         if task_id == -1:
             return jsonify(description="Failed to delete job",error='Error creating task'), 400
-            
+
         # asynchronous task creation
         aTask = threading.Thread(target=cancel_job_task,
                              args=(auth_header, system_name, system_addr, action, task_id))
@@ -1019,8 +1019,8 @@ def acct():
         # if error in creating task:
         if task_id == -1:
             return jsonify(description="Failed to retrieve account information",error='Error creating task'), 400
-    
-        
+
+
         update_task(task_id, auth_header, async_task.QUEUED)
 
         # asynchronous task creation
@@ -1044,9 +1044,9 @@ def status():
 
     app.logger.info("Test status of service")
 
-    if request.remote_addr != STATUS_IP:
-        app.logger.warning("Invalid remote address: {addr}".format(addr=request.remote_addr))
-        return jsonify(error="Invalid access"), 403
+    # if request.remote_addr != STATUS_IP:
+    #     app.logger.warning("Invalid remote address: {addr}".format(addr=request.remote_addr))
+    #     return jsonify(error="Invalid access"), 403
 
     return jsonify(success="ack"), 200
 
