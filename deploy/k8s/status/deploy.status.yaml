@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: status-deploy
+  name: deploy-status
 spec:
   replicas: 1
   selector:
     matchLabels:
-      run: status
+      app: status
   template:
     metadata:
       labels:
-        run: status      
+        app: status      
     spec:
       containers:
       - image: demo_status

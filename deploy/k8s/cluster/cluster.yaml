@@ -3,15 +3,15 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    name: f7t-cluster
+    name: deploy-cluster
   spec:
     selector:
       matchLabels:
-        app: f7t-cluster
+        app: cluster
     template:
       metadata:
         labels:
-          app: f7t-cluster
+          app: cluster
       spec:
         containers:
         - name: f7t-cluster

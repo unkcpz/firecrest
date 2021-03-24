@@ -3,11 +3,11 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: f7t-cluster
+    name: svc-cluster
   spec:
     type: ClusterIP
     selector:
-      app: f7t-cluster
+      app: cluster
     ports:
     - name: "22"
       protocol: TCP

@@ -3,11 +3,11 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: f7t-certificator-svc
+    name: svc-certificator
   spec:
     type: ClusterIP
     selector:
-      app: certificator-opa
+      app: certificator
     ports:
     - name: "8181"
       protocol: TCP

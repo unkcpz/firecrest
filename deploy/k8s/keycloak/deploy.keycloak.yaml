@@ -3,9 +3,7 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    labels:
-      app: keycloak
-    name: keycloak
+    name: deploy-keycloak
   spec:
     replicas: 1
     strategy: {}

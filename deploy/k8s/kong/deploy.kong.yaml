@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kong-deploy
+  name: deploy-kong
 spec:
   replicas: 1
   selector:
     matchLabels:
-      run: kong
+      app: kong
   template:
     metadata:
       labels:
-        run: kong      
+        app: kong      
     spec:
       containers:
       - image: kong:2.3

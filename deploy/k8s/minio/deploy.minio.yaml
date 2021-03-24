@@ -3,19 +3,17 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    labels:
-      io.kompose.service: minio
-    name: minio
+    name: deploy-minio
   spec:
     replicas: 1
     selector:
       matchLabels:
-        io.kompose.service: minio
+        app: minio
     strategy: {}
     template:
       metadata:
         labels:
-          io.kompose.service: minio
+          app: minio
       spec:
         containers:
         - args:

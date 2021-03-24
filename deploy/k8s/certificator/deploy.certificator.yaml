@@ -3,15 +3,15 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    name: certificator-opa
+    name: deploy-certificator
   spec:
     selector:
       matchLabels:
-        app: certificator-opa
+        app: certificator
     template:
       metadata:
         labels:
-          app: certificator-opa
+          app: certificator
       spec:
         containers:
         - name: f7t-opa

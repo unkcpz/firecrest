@@ -3,9 +3,7 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    labels:
-      app: keycloak
-    name: keycloak
+    name: svc-keycloak
   spec:
     type: ClusterIP
     selector:
