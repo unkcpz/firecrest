@@ -15,7 +15,7 @@ items:
       spec:
         containers:
         - name: f7t-cluster
-          image: test-build_cluster
+          image: demo_cluster
           imagePullPolicy: Never
           ports:
           - containerPort: 22
