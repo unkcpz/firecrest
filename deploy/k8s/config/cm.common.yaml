@@ -12,8 +12,8 @@ data:
   F7T_COMPUTE_IP: compute
   F7T_COMPUTE_PORT: "5006"
   F7T_COMPUTE_URL: http://svc-compute:5006
-  F7T_EXT_TRANSFER_MACHINE_INTERNAL: '''f7t-cluster:22'''
-  F7T_EXT_TRANSFER_MACHINE_PUBLIC: '''f7t-cluster'''
+  F7T_EXT_TRANSFER_MACHINE_INTERNAL: '''svc-cluster:22'''
+  F7T_EXT_TRANSFER_MACHINE_PUBLIC: '''svc-cluster'''
   F7T_FILESYSTEMS: '"/home"'
   F7T_FIRECREST_SERVICE: '''firecrest.some.place'''
   F7T_KONG_COMPUTE_URL: http://svc-compute:5006
@@ -32,7 +32,7 @@ data:
   F7T_STATUS_IP: status
   F7T_STATUS_PORT: "5001"
   F7T_STATUS_SERVICES: '''certificator;utilities;compute;tasks;storage'''
-  F7T_STATUS_SYSTEMS: '''f7t-cluster:22'''
+  F7T_STATUS_SYSTEMS: '''svc-cluster:22'''
   F7T_STATUS_URL: http://svc-status:5001
   F7T_STORAGE_IP: storage
   F7T_STORAGE_JOBS_MACHINE: cluster
@@ -40,9 +40,9 @@ data:
   F7T_STORAGE_PORT: "5002"
   F7T_STORAGE_TEMPURL_EXP_TIME: "604800"
   F7T_STORAGE_URL: http://svc-storage:5002
-  F7T_SYSTEMS_INTERNAL_COMPUTE: '''f7t-cluster:22'''
-  F7T_SYSTEMS_INTERNAL_STORAGE: '''f7t-cluster:22'''
-  F7T_SYSTEMS_INTERNAL_UTILITIES: '''f7t-cluster:22'''
+  F7T_SYSTEMS_INTERNAL_COMPUTE: '''svc-cluster:22'''
+  F7T_SYSTEMS_INTERNAL_STORAGE: '''svc-cluster:22'''
+  F7T_SYSTEMS_INTERNAL_UTILITIES: '''svc-cluster:22'''
   F7T_SYSTEMS_PUBLIC: '''cluster'''
   F7T_TASKS_IP: tasks
   F7T_TASKS_PORT: "5003"
