@@ -3,7 +3,7 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: minio
+    name: svc-minio
   spec:
     ports:
     - name: "9000"
