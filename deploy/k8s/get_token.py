@@ -4,9 +4,9 @@ import sys
 import jwt
 import json
 
-keycloak_ip = sys.argv[1]
+# keycloak_ip = sys.argv[1]
 
-token_uri=f"http://{keycloak_ip}:8080/auth/realms/kcrealm/protocol/openid-connect/token"
+token_uri=f"http://localhost:8080/auth/realms/kcrealm/protocol/openid-connect/token"
 client_secret="b391e177-fa50-4987-beaf-e6d33ca93571"
 client_id="firecrest-sample"
 
@@ -18,7 +18,7 @@ data = {"grant_type":"client_credentials",
                 "client_id": client_id,
             "client_secret":client_secret}
 
-UTILITIES_URL="http://10.150.130.158:5004"
+FIRECREST_URL = "http://localhost:8000"
     
 try:
   resp = requests.post(token_uri, headers=headers, data=data)
@@ -34,11 +34,15 @@ try:
     # print(json.dumps(decoded_token, indent=4))
     
 
-    resp_util = requests.get(f"{UTILITIES_URL}/ls", params={"targetPath":"/tmp"}, headers={"X-Machine-Name": "cluster", "Authorization": f"Bearer {access_token}"})
+    resp_util = requests.get(f"{FIRECREST_URL}/utilities/ls", params={"targetPath":"/tmp"}, headers={"X-Machine-Name": "cluster", "Authorization": f"Bearer {access_token}"})
 
-    print(resp_util.json())
-    print(resp_util.headers)
-    print(resp_util.status_code)
+    if resp_util.ok:
+      print(json.dumps(resp_util.json(),indent=2))
+    else:
+
+      print(resp_util.text)
+      print(resp_util.headers)
+      print(resp_util.status_code)
   else:
   
     print(resp.json())
@@ -47,5 +51,7 @@ try:
 
 except Exception as e:
   print(f"Error: {e}")
+  
+
 
 

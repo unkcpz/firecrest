@@ -31,35 +31,35 @@ items:
         - /
       services:
       - name: compute
-        url: http://compute:5006
+        url: http://svc-compute:5006
         routes:
         - name: compute
           methods: [DELETE,GET,POST]
           paths:
           - /compute/
       - name: status
-        url: http://status:5001
+        url: http://svc-status:5001
         routes:
         - name: status
           methods: [GET]
           paths:
           - /status/
       - name: storage
-        url: http://storage:5002
+        url: http://svc-storage:5002
         routes:
         - name: storage
           methods: [GET,POST]
           paths:
           - /storage/
       - name: tasks
-        url: http://tasks:5003
+        url: http://svc-tasks:5003
         routes:
         - name: tasks
           methods: [GET]
           paths:
           - /tasks/
       - name: utilities
-        url: http://utilities:5004
+        url: http://svc-utilities:5004
         routes:
         - name: utilities
           methods: [DELETE,GET,POST,PUT]
