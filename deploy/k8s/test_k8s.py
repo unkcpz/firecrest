@@ -3,6 +3,7 @@ import requests
 import sys
 import jwt
 import json
+import time
 
 # keycloak_ip = sys.argv[1]
 
@@ -91,6 +92,45 @@ except Exception as e:
   print(f"Error: {e}")
   print("-----------------------------------------------------")
   print("UTILITIES ERROR")
+
+try:
+  print("#####################################################")
+  print("TEST COMPUTE")
+  print("-----------------------------------------------------")
+  resp_jobs = requests.get(f"{FIRECREST_URL}/compute/jobs", headers={"X-Machine-Name": "cluster", "Authorization": f"Bearer {access_token}"})
+  
+  if resp_jobs.ok:
+
+    task_id = resp_jobs.json()["task_id"]
+
+    time.sleep(5)
+
+    resp_task = requests.get(f"{FIRECREST_URL}/tasks/{task_id}", headers={"Authorization": f"Bearer {access_token}"})
+
+    if resp_task.ok:
+
+      status = resp_task.json()["task"]["status"]
+
+      if status!="200":
+        print(json.dumps(resp_task.json()["task"],indent=2))
+        print("-----------------------------------------------------")
+        print("COMPUTE ERROR")      
+      else:
+
+        print(json.dumps(resp_task.json()["task"],indent=2))
+        print("-----------------------------------------------------")
+        print("COMPUTE OK")      
+  else:
+
+    print(resp_task.text)
+    print(resp_task.headers)
+    print(resp_task.status_code)
+    print("-----------------------------------------------------")
+    print("COMPUTE ERROR") 
+except Exception as e:
+  print(f"Error: {e}")
+  print("-----------------------------------------------------")
+  print("COMPUTE ERROR")
   
  
 
