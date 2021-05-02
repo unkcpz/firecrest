@@ -51,7 +51,7 @@ services:
       - 5006:5006
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
+      - ${USER_KEY_PRIV}:/user-key:ro
       - ./ssl:/ssl
 
   status:
@@ -91,7 +91,7 @@ services:
         ipv4_address: 192.168.220.5
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
+      - ${USER_KEY_PRIV}:/user-key:ro
       - ./ssl:/ssl
 
   tasks:
@@ -134,26 +134,26 @@ services:
       - 5004:5004
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
+      - ${USER_KEY_PRIV}:/user-key:ro
       - ./ssl:/ssl
 
-  reservations:
-    container_name: reservations
-    build: 
-      context: ../../
-      dockerfile: deploy/docker/reservations/Dockerfile
-      network: host
-    env_file:
-      - ./common/common.env
-    networks:
-      firecrest-internal:
-        ipv4_address: 192.168.220.8
-    ports:
-      - 5005:5005
-    volumes:
-      - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
-      - ./ssl:/ssl
+#  reservations:
+#    container_name: reservations
+#    build: 
+#      context: ../../
+#      dockerfile: deploy/docker/reservations/Dockerfile
+#      network: host
+#    env_file:
+#      - ./common/common.env
+#    networks:
+#      firecrest-internal:
+#        ipv4_address: 192.168.220.8
+#    ports:
+#      - 5005:5005
+#    volumes:
+#      - ./logs/firecrest:/var/log:delegated
+#      - ${USER_KEY_PRIV}:/user-key:ro
+#      - ./ssl:/ssl
 
   # web client
   client:
@@ -222,20 +222,20 @@ services:
     ports:
       - 8000:8000
 
-  minio:
-    image: minio/minio:RELEASE.2021-02-01T22-56-52Z
-    command: minio server /data
-    container_name: minio
-    environment:
-     MINIO_ACCESS_KEY: storage_access_key
-     MINIO_SECRET_KEY: storage_secret_key
-    networks:
-      firecrest-internal:
-        ipv4_address: 192.168.220.19
-    ports:
-      - "9000:9000"
-    volumes:
-      - ./minio:/data:delegated
+#  minio:
+#    image: minio/minio:RELEASE.2021-02-01T22-56-52Z
+#    command: minio server /data
+#    container_name: minio
+#    environment:
+#     MINIO_ACCESS_KEY: storage_access_key
+#     MINIO_SECRET_KEY: storage_secret_key
+#    networks:
+#      firecrest-internal:
+#        ipv4_address: 192.168.220.19
+#    ports:
+#      - "9000:9000"
+#    volumes:
+#      - ./minio:/data:delegated
 
   taskpersistence:
     container_name: taskpersistence
