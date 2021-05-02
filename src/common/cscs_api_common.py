@@ -261,12 +261,9 @@ def exec_remote_command(auth_header, system_name, system_addr, action, file_tran
             port = int(ipaddr[1])
 
         # use local private key
-        pub_cert='/user-key'
-        logging.info(f"Using private key: {pub_cert}")
- 
         client.connect(hostname=host, port=port,
                        username=username,
-                       key_filename=pub_cert,
+                       key_filename='/user-key',
                        allow_agent=False,
                        look_for_keys=False,
                        timeout=10)
