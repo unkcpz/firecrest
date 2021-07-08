@@ -196,7 +196,7 @@ services:
 
   # complementary 3rd party services
   keycloak:
-    image: "jboss/keycloak:4.8.3.Final"
+    image: "jboss/keycloak:9.0.3"
     container_name: fckeycloak
     env_file: keycloak/keycloak.env
     environment:
