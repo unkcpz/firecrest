@@ -38,6 +38,7 @@ def homepage():
 @app.route('/login')
 def login():
     redirect_uri = url_for('callback', _external=True)
+    print(redirect_uri)
     # PKCE: we ask for authorization passing the challenge and specifying the method
     return oauth.kc.authorize_redirect(redirect_uri, code_challenge_method='S256', code_challenge=code_challenge)
 
@@ -58,4 +59,4 @@ def logout():
     return resp
     
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=7000, ssl_context='adhoc')
+    app.run(host='0.0.0.0', port=7070, ssl_context='adhoc')

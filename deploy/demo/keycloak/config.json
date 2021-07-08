@@ -534,7 +534,7 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "f3d443ab-b2c6-4250-af14-fa2ee32152f5",
-    "redirectUris" : [ "https://localhost:7000/*" ],
+    "redirectUris" : [ "https://localhost:7070/*" ],
     "webOrigins" : [ ],
     "notBefore" : 0,
     "bearerOnly" : false,
