@@ -15,6 +15,7 @@ oauth = OAuth(app)
 oauth.register(
     name='kc',
     server_metadata_url=CONF_URL,
+    # client id and secret registered for demo deployment
     client_id='firecrest-pkce',
     client_secret='f3d443ab-b2c6-4250-af14-fa2ee32152f5',
     client_kwargs={
