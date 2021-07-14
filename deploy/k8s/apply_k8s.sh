@@ -34,4 +34,8 @@ p="$p $!"
 wait_running minio
 kubectl port-forward $pod 9000:9000 &> /dev/null &
 p="$p $!"
+
+wait_running jaeger
+kubectl port-forward $pod 16686:16686 &> /dev/null &
+p="$p $!"
 echo "... all done, to kill forward processes: kill $p"

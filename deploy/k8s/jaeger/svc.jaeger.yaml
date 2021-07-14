@@ -9,6 +9,7 @@ items:
     - name: "6831"
       port: 6831
       targetPort: 6831
+      protocol: UDP
     - name: "6832"
       port: 6832
       targetPort: 6832
@@ -27,8 +28,9 @@ items:
     - name: "9411"
       port: 9411
       targetPort: 9411
+      protocol: TCP
     selector:
-      app: minio
+      app: jaeger
   status:
     loadBalancer: {}
 kind: List

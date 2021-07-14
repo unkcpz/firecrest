@@ -13,7 +13,7 @@ spec:
         app: kong      
     spec:
       containers:
-      - image: kong:2.3
+      - image: kong:2.5
         env:
         - name: KONG_DECLARATIVE_CONFIG
           value: /kong/kong.yaml
@@ -22,9 +22,6 @@ spec:
         name: kong
         ports:
         - containerPort: 8000
-        envFrom:
-        - configMapRef:
-            name: common-env-file
         volumeMounts:
         - mountPath: /var/log
           name: logs-endpoint  
