@@ -12,7 +12,10 @@ import jwt
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import base64
+from flask_opentracing import FlaskTracing
+from jaeger_client import Config
 import requests
+import re
 
 # Checks if an environment variable injected to F7T is a valid True value
 # var <- object
@@ -37,6 +40,12 @@ AUTH_ROLE = os.environ.get("F7T_AUTH_ROLE", '').strip('\'"')
 
 CERTIFICATOR_PORT = os.environ.get("F7T_CERTIFICATOR_PORT", 5000)
 
+# Fobidden chars on command certificate: avoid shell special chars
+#   Difference to other microservices: allow '>' for 'cat' and 'head', '&' for Storage URLs, single quotes (') for arguments
+#   Commands must only use single quotes
+#   r'...' specifies it's a regular expression with special treatment for \
+FORBIDDEN_COMMAND_CHARS = r'[\<\|\;\"\\\[\]\(\)\x00-\x1F]'
+
 # OPA endpoint
 OPA_USE = get_boolean_var(os.environ.get("F7T_OPA_USE",False))
 OPA_URL = os.environ.get("F7T_OPA_URL","http://localhost:8181").strip('\'"')
@@ -58,6 +67,19 @@ debug = get_boolean_var(os.environ.get("F7T_DEBUG_MODE", False))
 
 app = Flask(__name__)
 
+JAEGER_AGENT = os.environ.get("F7T_JAEGER_AGENT", "")
+if JAEGER_AGENT != "":
+    config = Config(
+        config={'sampler': {'type': 'const', 'param': 1 },
+            'local_agent': {'reporting_host': JAEGER_AGENT, 'reporting_port': 6831 },
+            'logging': True,
+            'reporter_batch_size': 1},
+            service_name = "certificator")
+    jaeger_tracer = config.initialize_tracer()
+    tracing = FlaskTracing(jaeger_tracer, True, app)
+else:
+    jaeger_tracer = None
+    tracing = None
 
 # check user authorization on endpoint
 # using Open Policy Agent
@@ -231,7 +253,7 @@ def receive():
         # Check if user is authorized in OPA
         cluster = request.args.get("cluster","")
         if not cluster:
-            return jsonify(description='No cluster specified'), 404
+            return jsonify(description='No cluster specified'), 400
 
         auth_result = check_user_auth(username,cluster)
         if not auth_result["allow"]:
@@ -242,15 +264,22 @@ def receive():
 
         # if command is provided, parse to use force-command
         force_command = base64.urlsafe_b64decode(request.args.get("command", '')).decode("utf-8")
+        force_opt = ''
         if force_command:
             force_opt = base64.urlsafe_b64decode(request.args.get("option", '')).decode("utf-8")
-            if force_command == 'curl':
+            # find first space and take substring to check command. If there isn't a space, .find() returns -1
+            i = force_command.find(' ') + 1
+            tc = force_command[i:i + 4]
+            if tc == 'curl':
                 exp_time = request.args.get("exptime", '')
                 if exp_time:
                     ssh_expire = f"+{exp_time}s"
         else:
-            return jsonify(description='No command specified'), 404
+            return jsonify(description='No command specified'), 400
 
+        if re.search(FORBIDDEN_COMMAND_CHARS, force_command + force_opt) != None:
+            app.logger.error(f"Forbidden char on command or option: {force_command} {force_opt}")
+            return jsonify(description='Invalid command'), 400
 
         force_command = f"-O force-command=\"{force_command} {force_opt}\""
 
@@ -264,7 +293,7 @@ def receive():
 
     except Exception as e:
         logging.error(e)
-        return jsonify(description=f"Error creating certificate. {e}", error=-1), 404
+        return jsonify(description=f"Error creating certificate. {e}", error=-1), 400
 
     try:
         result = subprocess.check_output([command], shell=True)
@@ -278,9 +307,9 @@ def receive():
         # return certificate
         return jsonify(certificate=cert), 200
     except subprocess.CalledProcessError as e:
-        return jsonify(description=e.output, error=e.returncode), 404
+        return jsonify(description=e.output, error=e.returncode), 400
     except Exception as e:
-        return jsonify(description=f"Error creating certificate. {e}", error=-1), 404
+        return jsonify(description=f"Error creating certificate. {e}", error=-1), 400
 
 
 # get status for status microservice
@@ -307,17 +336,17 @@ if __name__ == "__main__":
     logger.addHandler(logHandler)
 
     # check that CA private key has proper permissions: 400 (no user write, and no access for group and others)
-    import stat
+    import stat, sys
     try:
         cas = os.stat('ca-key').st_mode
         if oct(cas & 0o477) != '0o400':
-            app.logger.error("ERROR: wrong 'ca-key' permissions, please set to 400. Exiting.")
-            raise SystemExit
-    except SystemExit as e:
-        exit(e)
-    except:
-        app.logger.error("ERROR: couldn't read 'ca-key', exiting.")
-        exit(1)
+            msg = "ERROR: wrong 'ca-key' permissions, please set to 400. Exiting."
+            app.logger.error(msg)
+            sys.exit(msg)
+    except OSError as e:
+        msg = f"ERROR: couldn't stat 'ca-key', message: {e.strerror} - Exiting."
+        app.logger.error(msg)
+        sys.exit(msg)
 
     # run app
     # debug = False, so output redirects to log files

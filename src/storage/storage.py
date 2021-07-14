@@ -19,7 +19,7 @@ from cscs_api_common import create_task, update_task, get_task_status
 from cscs_api_common import exec_remote_command
 from cscs_api_common import create_certificate
 from cscs_api_common import in_str
-from cscs_api_common import is_valid_file, is_valid_dir, check_command_error, get_boolean_var
+from cscs_api_common import is_valid_file, is_valid_dir, check_command_error, get_boolean_var, validate_input
 
 # job_time_checker for correct SLURM job time in /xfer-internal tasks
 import job_time
@@ -33,6 +33,9 @@ from hashlib import md5
 import stat
 from cryptography.fernet import Fernet
 import time
+from flask_opentracing import FlaskTracing
+from jaeger_client import Config
+import opentracing
 
 ## READING vars environment vars
 
@@ -104,6 +107,8 @@ SSL_KEY = os.environ.get("F7T_SSL_KEY", "")
 # verify signed SSL certificates
 SSL_SIGNED = get_boolean_var(os.environ.get("F7T_SSL_SIGNED", False))
 
+TRACER_HEADER = "uber-trace-id"
+
 # aynchronous tasks: upload & download --> http://TASKS_URL
 # {task_id : AsyncTask}
 
@@ -118,6 +123,36 @@ debug = get_boolean_var(os.environ.get("F7T_DEBUG_MODE", False))
 
 
 app = Flask(__name__)
+
+JAEGER_AGENT = os.environ.get("F7T_JAEGER_AGENT", "")
+if JAEGER_AGENT != "":
+    config = Config(
+        config={'sampler': {'type': 'const', 'param': 1 },
+            'local_agent': {'reporting_host': JAEGER_AGENT, 'reporting_port': 6831 },
+            'logging': True,
+            'reporter_batch_size': 1},
+            service_name = "storage")
+    jaeger_tracer = config.initialize_tracer()
+    tracing = FlaskTracing(jaeger_tracer, True, app)
+else:
+    jaeger_tracer = None
+    tracing = None
+
+
+def get_tracing_headers(req):
+    """
+    receives a requests object, returns headers suitable for RPC and ID for logging
+    """
+    new_headers = {}
+    if JAEGER_AGENT != "":
+        try:
+            jaeger_tracer.inject(tracing.get_span(req), opentracing.Format.TEXT_MAP, new_headers)
+        except Exception as e:
+            app.logger.error(e)
+
+    new_headers[AUTH_HEADER_NAME] = req.headers[AUTH_HEADER_NAME]
+    ID = new_headers.get(TRACER_HEADER, '')
+    return new_headers, ID
 
 def file_to_str(fileName):
 
@@ -311,26 +346,25 @@ def check_upload_files():
 # sourcePath: path in FS where the object is
 # task_id: async task id given for Tasks microservice
 
-def download_task(auth_header,system_name, system_addr,sourcePath,task_id):
+def download_task(headers, system_name, system_addr, sourcePath, task_id):
     object_name = sourcePath.split("/")[-1]
     global staging
 
     # check if staging area token is valid
-    if not staging.is_token_valid():
-        if not staging.authenticate():
-            msg = "Staging area auth error"
-            update_task(task_id, auth_header, async_task.ERROR, msg)
-            return
+    if not staging.renew_token():
+        msg = "Staging area auth error"
+        update_task(task_id, headers, async_task.ERROR, msg)
+        return
 
     # create container if it doesn't exists:
-    container_name = get_username(auth_header)
+    container_name = get_username(headers[AUTH_HEADER_NAME])
 
     if not staging.is_container_created(container_name):
         errno = staging.create_container(container_name)
 
         if errno == -1:
-            msg="Could not create container {container_name} in Staging Area ({staging_name})".format(container_name=container_name, staging_name=staging.get_object_storage())
-            update_task(task_id, auth_header, async_task.ERROR, msg)
+            msg = f"Could not create container {container_name} in Staging Area ({staging.get_object_storage()})"
+            update_task(task_id, headers, async_task.ERROR, msg)
             return
 
     # upload file to swift
@@ -339,14 +373,14 @@ def download_task(auth_header,system_name, system_addr,sourcePath,task_id):
     upload_url = staging.create_upload_form(sourcePath, container_name, object_prefix, STORAGE_TEMPURL_EXP_TIME, STORAGE_MAX_FILE_SIZE)
 
     # advice Tasks that upload begins:
-    update_task(task_id, auth_header, async_task.ST_UPL_BEG)
+    update_task(task_id, headers, async_task.ST_UPL_BEG)
 
     # upload starts:
-    res = exec_remote_command(auth_header,system_name, system_addr,upload_url["command"])
+    res = exec_remote_command(headers, system_name, system_addr, upload_url["command"])
 
     # if upload to SWIFT fails:
     if res["error"] != 0:
-        msg = "Upload to Staging area has failed. Object: {object_name}".format(object_name=object_name)
+        msg = f"Upload to Staging area has failed. Object: {object_name}"
 
         error_str = res["msg"]
         if in_str(error_str,"OPENSSH"):
@@ -354,7 +388,7 @@ def download_task(auth_header,system_name, system_addr,sourcePath,task_id):
         msg = f"{msg}. {error_str}"
 
         app.logger.error(msg)
-        update_task(task_id, auth_header,async_task.ST_UPL_ERR, msg)
+        update_task(task_id, headers, async_task.ST_UPL_ERR, msg)
         return
 
 
@@ -364,12 +398,12 @@ def download_task(auth_header,system_name, system_addr,sourcePath,task_id):
 
     # if error raises in temp url creation:
     if temp_url == None:
-        msg = "Temp URL creation failed. Object: {object_name}".format(object_name=object_name)
-        update_task(task_id, auth_header, async_task.ERROR, msg)
+        msg = f"Temp URL creation failed. Object: {object_name}"
+        update_task(task_id, headers, async_task.ERROR, msg)
         return
 
     # if succesfully created: temp_url in task with success status
-    update_task(task_id, auth_header, async_task.ST_UPL_END, temp_url)
+    update_task(task_id, headers, async_task.ST_UPL_END, temp_url)
     # marked deletion from here to STORAGE_TEMPURL_EXP_TIME (default 30 days)
     retval = staging.delete_object_after(containername=container_name,prefix=object_prefix,objectname=object_name,ttl=int(time.time()) + STORAGE_TEMPURL_EXP_TIME)
 
@@ -385,44 +419,40 @@ def download_task(auth_header,system_name, system_addr,sourcePath,task_id):
 @check_auth_header
 def download_request():
 
-    auth_header = request.headers[AUTH_HEADER_NAME]
-
     system_addr = EXT_TRANSFER_MACHINE_INTERNAL
     system_name = EXT_TRANSFER_MACHINE_PUBLIC
-    sourcePath = request.form["sourcePath"]  # path file in cluster
 
-    if sourcePath == None or sourcePath == "":
-        data = jsonify(error="Source path not set in request")
-        return data, 400
+    sourcePath = request.form.get("sourcePath", None) # path file in cluster
+    v = validate_input(sourcePath)
+    if v != "":
+        return jsonify(description="Failed to download file", error=f"'sourcePath' {v}"), 400
 
+    [headers, ID] = get_tracing_headers(request)
     # checks if sourcePath is a valid path
-    check = is_valid_file(sourcePath, auth_header, system_name, system_addr)
-
+    check = is_valid_file(sourcePath, headers, system_name, system_addr)
 
     if not check["result"]:
         return jsonify(description="sourcePath error"), 400, check["headers"]
 
-
     # obtain new task from Tasks microservice
-    task_id = create_task(auth_header, service="storage")
+    task_id = create_task(headers, service="storage")
 
     # couldn't create task
     if task_id == -1:
-        data = jsonify(error="Couldn't create task")
-        return data, 400
+        return jsonify(error="Couldn't create task"), 400
 
     # asynchronous task creation
     aTask = threading.Thread(target=download_task,
-                             args=(auth_header, system_name, system_addr, sourcePath, task_id))
+                             args=(headers, system_name, system_addr, sourcePath, task_id))
 
     storage_tasks[task_id] = aTask
 
     try:
-        update_task(task_id, auth_header, async_task.QUEUED)
+        update_task(task_id, headers, async_task.QUEUED)
 
         storage_tasks[task_id].start()
 
-        task_url = "{kong_url}/tasks/{task_id}".format(kong_url=KONG_URL, task_id=task_id)
+        task_url = f"{KONG_URL}/tasks/{task_id}"
 
         data = jsonify(success="Task created", task_url=task_url, task_id=task_id)
         return data, 201
@@ -439,21 +469,21 @@ def download_request():
 @check_auth_header
 def invalidate_request():
     try:
-
         task_id = request.headers["X-Task-Id"]
+        if not task_id.isalnum():
+            return jsonify(error="Header X-Task-Id is not alphanumeric"), 400
     except KeyError as e:
         return jsonify(error="Header X-Task-Id missing"), 400
 
-    auth_header = request.headers[AUTH_HEADER_NAME]
-
+    [headers, ID] = get_tracing_headers(request)
     # search if task belongs to the user
-    task_status = get_task_status(task_id, auth_header)
+    task_status = get_task_status(task_id, headers)
 
     if task_status == -1:
         return jsonify(error="Invalid X-Task-Id"), 400
 
 
-    containername = get_username(auth_header)
+    containername = get_username(headers[AUTH_HEADER_NAME])
     prefix        = task_id
 
     objects = staging.list_objects(containername,prefix)
@@ -470,22 +500,18 @@ def invalidate_request():
     return jsonify(success="URL invalidated successfully"), 201
 
 
-
-
-
-
 # async task for upload large files
 # user: user in the posix file system
 # system: system in which the file will be stored (REMOVE later)
 # targetPath: absolute path in which to store the file
 # sourcePath: absolute path in local FS
 # task_id: async task_id created with Tasks microservice
-def upload_task(auth_header,system_name, system_addr,targetPath,sourcePath,task_id):
+def upload_task(headers, system_name, system_addr, targetPath, sourcePath, task_id):
 
     fileName = sourcePath.split("/")[-1]
 
     # container to bind:
-    container_name = get_username(auth_header)
+    container_name = get_username(headers[AUTH_HEADER_NAME])
 
     # change hash_id for task_id since is not longer needed for (failed) redirection
     uploaded_files[task_id] = {"user": container_name,
@@ -499,20 +525,19 @@ def upload_task(auth_header,system_name, system_addr,targetPath,sourcePath,task_
     data = uploaded_files[task_id]
 
     global staging
-    data["msg"] = "Waiting for Presigned URL to upload file to staging area ({})".format(staging.get_object_storage())
+    data["msg"] = f"Waiting for Presigned URL to upload file to staging area ({staging.get_object_storage()})"
 
     # change to dictionary containing upload data (for backup purpouses) and adding url call
-    update_task(task_id, auth_header, async_task.ST_URL_ASK, data, is_json=True)
+    update_task(task_id, headers, async_task.ST_URL_ASK, data, is_json=True)
 
     # check if staging token is valid
-    if not staging.is_token_valid():
-        if not staging.authenticate():
-            data = uploaded_files[task_id]
-            msg = "Staging Area auth error, try again later"
-            data["msg"] = msg
-            data["status"] = async_task.ERROR
-            update_task(task_id, auth_header, async_task.ERROR, data, is_json=True)
-            return
+    if not staging.renew_token():
+        data = uploaded_files[task_id]
+        msg = "Staging Area auth error, try again later"
+        data["msg"] = msg
+        data["status"] = async_task.ERROR
+        update_task(task_id, headers, async_task.ERROR, data, is_json=True)
+        return
 
 
     # create or return container
@@ -521,10 +546,10 @@ def upload_task(auth_header,system_name, system_addr,targetPath,sourcePath,task_
 
         if errno == -1:
             data = uploaded_files[task_id]
-            msg="Could not create container {container_name} in Staging Area ({staging_name})".format(container_name=container_name, staging_name=staging.get_object_storage())
+            msg = f"Could not create container {container_name} in Staging Area ({staging.get_object_storage()})"
             data["msg"] = msg
             data["status"] = async_task.ERROR
-            update_task(task_id,auth_header,async_task.ERROR,data,is_json=True)
+            update_task(task_id, headers, async_task.ERROR, data, is_json=True)
             return
 
     object_prefix = task_id
@@ -538,10 +563,11 @@ def upload_task(auth_header,system_name, system_addr,targetPath,sourcePath,task_
     download_url = staging.create_temp_url(container_name, object_prefix, fileName, STORAGE_TEMPURL_EXP_TIME)
 
     # create certificate for later download from OS to filesystem
-    app.logger.info("Creating certificate for later download")
+    ID = headers.get(TRACER_HEADER, '')
+    app.logger.info(f"{ID} Creating certificate for later download")
     options = f"-s -G -o {targetPath}/{fileName} -- '{download_url}'"
     exp_time = STORAGE_TEMPURL_EXP_TIME
-    certs = create_certificate(auth_header, system_name, system_addr, "curl", options, exp_time)
+    certs = create_certificate(headers, system_name, system_addr, f"ID={ID} curl", options, exp_time)
 
     if not certs[0]:
         data = uploaded_files[task_id]
@@ -549,7 +575,7 @@ def upload_task(auth_header,system_name, system_addr,targetPath,sourcePath,task_
         app.logger.error(msg)
         data["msg"] = msg
         data["status"] = async_task.ERROR
-        update_task(task_id,auth_header,async_task.ERROR,data,is_json=True)
+        update_task(task_id, headers, async_task.ERROR, data, is_json=True)
         return
 
     # converts file to string to store in Tasks
@@ -574,7 +600,7 @@ def upload_task(auth_header,system_name, system_addr,targetPath,sourcePath,task_
 
     app.logger.info("Cert and url created correctly")
 
-    update_task(task_id,auth_header,async_task.ST_URL_REC,data,is_json=True)
+    update_task(task_id, headers, async_task.ST_URL_REC, data, is_json=True)
 
     return
 
@@ -584,54 +610,44 @@ def upload_task(auth_header,system_name, system_addr,targetPath,sourcePath,task_
 @check_auth_header
 def upload_request():
 
-    auth_header = request.headers[AUTH_HEADER_NAME]
-
     system_addr = EXT_TRANSFER_MACHINE_INTERNAL
     system_name = EXT_TRANSFER_MACHINE_PUBLIC
 
+    targetPath = request.form.get("targetPath", None) # path to save file in cluster
+    v = validate_input(targetPath)
+    if v != "":
+        return jsonify(description="Failed to upload file", error=f"'targetPath' {v}"), 400
 
-    targetPath   = request.form["targetPath"] # path to save file in cluster
-    sourcePath   = request.form["sourcePath"] # path from the local FS
+    sourcePath = request.form.get("sourcePath", None) # path from the local FS
+    v = validate_input(sourcePath)
+    if v != "":
+        return jsonify(description="Failed to upload file", error=f"'sourcePath' {v}"), 400
 
-
-    if system_addr == None or system_addr == "":
-        data = jsonify(error="System not set in request")
-        return data, 400
-
-    if targetPath == None or targetPath == "":
-        data = jsonify(error="Target path not set in request")
-        return data, 400
-
-
-    if sourcePath == None or sourcePath == "":
-        data = jsonify(error="Source path not set in request")
-        return data, 400
-
-    # checks if sourcePath is a valid path
-    check = is_valid_dir(targetPath, auth_header, system_name, system_addr)
+    [headers, ID] = get_tracing_headers(request)
+    # checks if targetPath is a valid path
+    check = is_valid_dir(targetPath, headers, system_name, system_addr)
 
     if not check["result"]:
         return jsonify(description="sourcePath error"), 400, check["headers"]
 
     # obtain new task from Tasks microservice
-    task_id = create_task(auth_header,service="storage")
+    task_id = create_task(headers, service="storage")
 
     if task_id == -1:
         return jsonify(error="Error creating task"), 400
 
-
     # asynchronous task creation
     try:
-        update_task(task_id, auth_header,async_task.QUEUED)
+        update_task(task_id, headers, async_task.QUEUED)
 
         aTask = threading.Thread(target=upload_task,
-                             args=(auth_header,system_name, system_addr,targetPath,sourcePath,task_id))
+                             args=(headers, system_name, system_addr, targetPath, sourcePath, task_id))
 
         storage_tasks[task_id] = aTask
 
         storage_tasks[task_id].start()
 
-        task_url = "{kong_url}/tasks/{task_id}".format(kong_url=KONG_URL,task_id=task_id)
+        task_url = f"{KONG_URL}/tasks/{task_id}"
 
         data = jsonify(success="Task created",task_url=task_url,task_id=task_id)
         return data, 201
@@ -649,41 +665,38 @@ def upload_request():
 # creates a sbatch file to execute in --partition=xfer
 # user_header for user identification
 # command = "cp" "mv" "rm" "rsync"
-# sourcePath = source object path
-# targetPath = in "rm" command should be ""
 # jobName = --job-name parameter to be used on sbatch command
 # jobTime = --time  parameter to be used on sbatch command
 # stageOutJobId = value to set in --dependency:afterok parameter
 # account = value to set in --account parameter
-def exec_internal_command(auth_header,command,sourcePath, targetPath, jobName, jobTime, stageOutJobId, account):
+def exec_internal_command(headers, command, jobName, jobTime, stageOutJobId, account):
 
-
-    action = "{command} {sourcePath} {targetPath}".\
-                format(command=command, sourcePath=sourcePath, targetPath=targetPath)
     try:
         td = tempfile.mkdtemp(prefix="job")
 
         sbatch_file = open(td + "/sbatch-job.sh", "w")
 
         sbatch_file.write("#! /bin/bash -l\n")
-        sbatch_file.write("#SBATCH --job-name={jobName}\n".format(jobName=jobName))
-        sbatch_file.write("#SBATCH --time={jobTime}\n".format(jobTime=jobTime))
+        sbatch_file.write(f"#SBATCH --job-name='{jobName}'\n")
+        sbatch_file.write(f"#SBATCH --time={jobTime}\n")
         sbatch_file.write("#SBATCH --error=job-%j.err\n")
         sbatch_file.write("#SBATCH --output=job-%j.out\n")
         sbatch_file.write("#SBATCH --ntasks=1\n")
-        sbatch_file.write("#SBATCH --partition={xfer}\n".format(xfer=XFER_PARTITION))
+        sbatch_file.write(f"#SBATCH --partition={XFER_PARTITION}\n")
         # test line for error
         # sbatch_file.write("#SBATCH --constraint=X2450\n")
 
         if stageOutJobId != None:
-            sbatch_file.write("#SBATCH --dependency=afterok:{stageOutJobId}\n".format(stageOutJobId=stageOutJobId))
+            sbatch_file.write(f"#SBATCH --dependency=afterok:{stageOutJobId}\n")
         if account != None:
             app.logger.info(account)
-            sbatch_file.write(f"#SBATCH --account={account}")
+            sbatch_file.write(f"#SBATCH --account='{account}'")
 
         sbatch_file.write("\n")
-        sbatch_file.write("echo -e \"$SLURM_JOB_NAME started on $(date): {action}\"\n".format(action=action))
-        sbatch_file.write("srun -n $SLURM_NTASKS {action}\n".format(action=action))
+        ID = headers.get(TRACER_HEADER, '')
+        sbatch_file.write(f"echo Trace ID: {ID}\n")
+        sbatch_file.write("echo -e \"$SLURM_JOB_NAME started on $(date)\"\n")
+        sbatch_file.write(f"srun -n $SLURM_NTASKS {command}\n")
         sbatch_file.write("echo -e \"$SLURM_JOB_NAME finished on $(date)\"\n")
 
         sbatch_file.close()
@@ -693,13 +706,15 @@ def exec_internal_command(auth_header,command,sourcePath, targetPath, jobName, j
         result = {"error": 1, "msg":ioe.message}
         return result
 
-
     # create xfer job
-    resp = create_xfer_job(STORAGE_JOBS_MACHINE, auth_header, td + "/sbatch-job.sh")
+    resp = create_xfer_job(STORAGE_JOBS_MACHINE, headers, td + "/sbatch-job.sh")
 
-    # remove sbatch file and dir
-    os.remove(td + "/sbatch-job.sh")
-    os.rmdir(td)
+    try:
+        # remove sbatch file and dir
+        os.remove(td + "/sbatch-job.sh")
+        os.rmdir(td)
+    except IOError as ioe:
+        app.logger.error(f"Failed to remove temp sbatch file: {ioe.message}")
 
     return resp
 
@@ -734,31 +749,23 @@ def internal_rm():
 # common code for internal cp, mv, rsync, rm
 def internal_operation(request, command):
 
-    auth_header = request.headers[AUTH_HEADER_NAME]
-
     system_idx = SYSTEMS_PUBLIC.index(STORAGE_JOBS_MACHINE)
     system_addr = SYS_INTERNALS_UTILITIES[system_idx]
     system_name = STORAGE_JOBS_MACHINE
 
-    try:
-        targetPath = request.form["targetPath"]  # path to save file in cluster
-        if targetPath == "":
-            return jsonify(error="targetPath is empty"), 400
-    except:
-        app.logger.error("targetPath not specified")
-        return jsonify(error="targetPath not specified"), 400
+    targetPath = request.form.get("targetPath", None)  # path to save file in cluster
+    v = validate_input(targetPath)
+    if v != "":
+        return jsonify(description=f"Error on {command} operation", error=f"'targetPath' {v}"), 400
 
-
+    [headers, ID] = get_tracing_headers(request)
     # using actual_command to add options to check sanity of the command to be executed
     actual_command = ""
     if command in ['cp', 'mv', 'rsync']:
-        try:
-            sourcePath = request.form["sourcePath"]  # path to get file in cluster
-            if sourcePath == "":
-                return jsonify(error="sourcePath is empty"), 400
-        except:
-            app.logger.error("sourcePath not specified")
-            return jsonify(error="sourcePath not specified"), 400
+        sourcePath = request.form.get("sourcePath", None)  # path to get file in cluster
+        v = validate_input(sourcePath)
+        if v != "":
+            return jsonify(description=f"Error on {command} operation", error=f"'sourcePath' {v}"), 400
 
         # checks if file to copy, move or rsync (targetPath) is a valid path
         # remove the last part of the path (after last "/" char) to check if the dir can be written by user
@@ -768,16 +775,15 @@ def internal_operation(request, command):
 
         app.logger.info(f"_targetPath={_targetPath}")
 
-
-        check_dir  = is_valid_dir(_targetPath, auth_header, system_name, system_addr)
+        check_dir  = is_valid_dir(_targetPath, headers, system_name, system_addr)
 
         if not check_dir["result"]:
             return jsonify(description="targetPath error"), 400, check_dir["headers"]
 
-        check_file = is_valid_file(sourcePath, auth_header, system_name, system_addr)
+        check_file = is_valid_file(sourcePath, headers, system_name, system_addr)
 
         if not check_file["result"]:
-            check_dir  = is_valid_dir(sourcePath, auth_header, system_name, system_addr)
+            check_dir  = is_valid_dir(sourcePath, headers, system_name, system_addr)
 
             if not check_dir["result"]:
                 return jsonify(description="sourcePath error"), 400, check_dir["headers"]
@@ -792,10 +798,10 @@ def internal_operation(request, command):
     elif command == "rm":
         # for 'rm' there's no source, set empty to call exec_internal_command(...)
         # checks if file or dir to delete (targetPath) is a valid path or valid directory
-        check_file = is_valid_file(targetPath, auth_header, system_name, system_addr)
+        check_file = is_valid_file(targetPath, headers, system_name, system_addr)
 
         if not check_file["result"]:
-            check_dir  = is_valid_dir(targetPath, auth_header, system_name, system_addr)
+            check_dir  = is_valid_dir(targetPath, headers, system_name, system_addr)
 
             if not check_dir["result"]:
                 return jsonify(description="targetPath error"), 400, check_dir["headers"]
@@ -805,14 +811,17 @@ def internal_operation(request, command):
     else:
         return jsonify(error=f"Command {command} not allowed"), 400
 
-    try:
-        jobName = request.form["jobName"]  # jobName for SLURM
-        if jobName == None or jobName == "":
-            jobName = command + "-job"
-            app.logger.info("jobName not found, setting default to: {jobName}".format(jobName=jobName))
-    except:
+    # don't add tracing ID, we'll be executed by srun
+    actual_command = f"{actual_command} '{sourcePath}' '{targetPath}'"
+
+    jobName = request.form.get("jobName", "")  # jobName for SLURM
+    if jobName == "":
         jobName = command + "-job"
-        app.logger.info("jobName not found, setting default to: {jobName}".format(jobName=jobName))
+        app.logger.info(f"jobName not found, setting default to: {jobName}")
+    else:
+        v = validate_input(jobName)
+        if v != "":
+            return jsonify(description="Invalid jobName", error=f"'jobName' {v}"), 400
 
     try:
         jobTime = request.form["time"]  # job time, default is 2:00:00 H:M:s
@@ -821,10 +830,11 @@ def internal_operation(request, command):
     except:
         jobTime = "02:00:00"
 
-    try:
-        stageOutJobId = request.form["stageOutJobId"]  # start after this JobId has finished
-    except:
-        stageOutJobId = None
+    stageOutJobId = request.form.get("stageOutJobId", None)  # start after this JobId has finished
+    if stageOutJobId != None:
+        v = validate_input(stageOutJobId)
+        if v != "":
+            return jsonify(description="Invalid stageOutJobId", error=f"'stageOutJobId' {v}"), 400
 
     # select index in the list corresponding with machine name
     system_idx = SYSTEMS_PUBLIC.index(STORAGE_JOBS_MACHINE)
@@ -834,15 +844,16 @@ def internal_operation(request, command):
     # get "account" parameter, if not found, it is obtained from "id" command
     try:
         account = request.form["account"]
+        v = validate_input(account)
+        if v != "":
+            return jsonify(description="Invalid account", error=f"'account' {v}"), 400
     except:
         if USE_SLURM_ACCOUNT:
-            username = get_username(auth_header)
-
-            id_command = f"timeout {UTILITIES_TIMEOUT} id -gn -- {username}"
-            resp = exec_remote_command(auth_header, STORAGE_JOBS_MACHINE, system_addr, id_command)
+            username = get_username(headers[AUTH_HEADER_NAME])
+            id_command = f"ID={ID} timeout {UTILITIES_TIMEOUT} id -gn -- {username}"
+            resp = exec_remote_command(headers, STORAGE_JOBS_MACHINE, system_addr, id_command)
             if resp["error"] != 0:
                 retval = check_command_error(resp["msg"], resp["error"], f"{command} job")
-
                 return jsonify(description=f"Failed to submit {command} job", error=retval["description"]), retval["status_code"], retval["header"]
 
             account = resp["msg"]
@@ -851,7 +862,7 @@ def internal_operation(request, command):
 
     # check if machine is accessible by user:
     # exec test remote command
-    resp = exec_remote_command(auth_header, STORAGE_JOBS_MACHINE, system_addr, "true")
+    resp = exec_remote_command(headers, STORAGE_JOBS_MACHINE, system_addr, f"ID={ID} true")
 
     if resp["error"] != 0:
         error_str = resp["msg"]
@@ -862,7 +873,7 @@ def internal_operation(request, command):
             header = {"X-Permission-Denied": "User does not have permissions to access machine or path"}
             return jsonify(description=f"Failed to submit {command} job"), 404, header
 
-    retval = exec_internal_command(auth_header, actual_command, sourcePath, targetPath, jobName, jobTime, stageOutJobId, account)
+    retval = exec_internal_command(headers, actual_command, jobName, jobTime, stageOutJobId, account)
 
     # returns "error" key or "success" key
     try:
@@ -880,16 +891,14 @@ def internal_operation(request, command):
 # function to call SBATCH in --partition=xfer
 # uses Jobs microservice API call: POST http://{compute_url}/{machine}
 # all calls to cp, mv, rm or rsync are made using Jobs us.
-def create_xfer_job(machine,auth_header,fileName):
-
-    auth_header = request.headers[AUTH_HEADER_NAME]
+def create_xfer_job(machine, headers, fileName):
 
     files = {'file': open(fileName, 'rb')}
 
     try:
-        req = requests.post("{compute_url}/jobs/upload".
-                            format(compute_url=COMPUTE_URL),
-                            files=files, headers={AUTH_HEADER_NAME: auth_header, "X-Machine-Name":machine}, verify= (SSL_CRT if USE_SSL else False))
+        headers["X-Machine-Name"] = machine
+        req = requests.post(f"{COMPUTE_URL}/jobs/upload",
+                            files=files, headers=headers, verify=(SSL_CRT if USE_SSL else False))
 
         retval = json.loads(req.text)
         if not req.ok:
