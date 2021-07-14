@@ -12,7 +12,7 @@ wait_running() {
 
 
 echo "* Deleting services..."
-kubectl delete all --all
+kubectl delete all --all --grace-period=3
 
 echo "* Killing port forwardings..."
 pkill -f "kubectl port-forward deploy-"

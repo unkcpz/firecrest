@@ -13,6 +13,7 @@ items:
         labels:
           app: cluster
       spec:
+        hostname: cluster
         containers:
         - name: f7t-cluster
           image: demo_cluster
