@@ -66,7 +66,14 @@ def test_post_upload_request(headers):
 
     # upload file to storage server
     msg = resp.json()["task"]["data"]["msg"]
-    url = msg["parameters"]["url"]
+    url = msg["parameters"]["url"] # "http://svc-minio:9000/service-account-firecrest-sample"
+
+    ix = url.index("//")
+    jx = url.index(":",ix)
+
+    url=url.replace(url[ix+2:jx],"127.0.0.1")
+
+
 
     resp = None
 
@@ -96,6 +103,8 @@ def test_post_upload_request(headers):
 
         with open(data["sourcePath"], 'rb') as data:
             resp= requests.put(url, data=data, params=params, verify= (f"{SSL_PATH}{SSL_CRT}" if USE_SSL else False))
+
+    print(resp.text)
 
     assert resp.status_code == 200 or resp.status_code == 204 #TODO: check 204 is right
 
