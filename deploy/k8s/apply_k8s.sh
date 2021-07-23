@@ -38,4 +38,9 @@ p="$p $!"
 wait_running jaeger
 kubectl port-forward $pod 16686:16686 &> /dev/null &
 p="$p $!"
+
+wait_running openapi
+kubectl port-forward $pod 9090:8080 &> /dev/null &
+p="$p $!"
+
 echo "... all done, to kill forward processes: kill $p"
