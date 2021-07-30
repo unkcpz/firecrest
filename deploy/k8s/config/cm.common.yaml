@@ -38,7 +38,7 @@ data:
   F7T_SPANK_PLUGIN_OPTION: --nohome
   F7T_STATUS_IP: status
   F7T_STATUS_PORT: "5001"
-  F7T_STATUS_SERVICES: '''certificator;utilities;compute;tasks;storage'''
+  F7T_STATUS_SERVICES: '''certificator;utilities;compute;tasks;storage;reservations'''
   F7T_STATUS_SYSTEMS: '''svc-cluster:22'''
   F7T_STATUS_URL: http://svc-status:5001
   F7T_STORAGE_IP: storage

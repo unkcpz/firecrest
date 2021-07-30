@@ -1,46 +1,61 @@
 #!/bin/bash
 
 wait_running() {
-  echo " ... waiting for $1"
-  k1=$(kubectl get pods | grep ^deploy-$1 | grep Running)
+  echo -n "  - waiting for $1 "
+  k1=''
   while [ "$k1" == "" ]; do
-    sleep 1;
     k1=$(kubectl get pods | grep ^deploy-$1 | grep Running)
+    echo -n "."
+    sleep 1;
   done
+  echo ' up'
   pod=${k1%% *}
 }
 
 
 echo "* Deleting services..."
 kubectl delete all --all --grace-period=3
+if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 
-echo "* Killing port forwardings..."
+echo -n "* Killing port forwardings..."
 pkill -f "kubectl port-forward deploy-"
+echo ""
 
-echo
-echo "* Starting k8s..."
+echo -e "\n* Starting k8s..."
 kubectl apply -f . -R
+if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
+echo "  done."
 
-echo "* Doing port forwardings..."
+echo -e "\n* Creating port forwardings..."
 pod=""
 wait_running kong
 kubectl port-forward $pod 8000:8000 &> /dev/null &
 p="$!"
+if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 
 wait_running keycloak
 kubectl port-forward $pod 8080:8080 &> /dev/null &
 p="$p $!"
+if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 
 wait_running minio
 kubectl port-forward $pod 9000:9000 &> /dev/null &
 p="$p $!"
+if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 
 wait_running jaeger
 kubectl port-forward $pod 16686:16686 &> /dev/null &
 p="$p $!"
+if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 
 wait_running openapi
 kubectl port-forward $pod 9090:8080 &> /dev/null &
 p="$p $!"
+if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 
-echo "... all done, to kill forward processes: kill $p"
+wait_running f7t-client
+kubectl port-forward $pod 7000:5000 &> /dev/null &
+p="$p $!"
+if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
+
+echo "  all done, to kill forward processes: kill $p"

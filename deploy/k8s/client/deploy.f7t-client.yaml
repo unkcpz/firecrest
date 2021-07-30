@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-f7t-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: f7t-client
+  template:
+    metadata:
+      labels:
+        app: f7t-client
+    spec:
+      containers:
+      - name: f7t-client
+        image: demo_client
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 7000
+        volumeMounts:
+        - name: logs-endpoint
+          mountPath: /var/log
+        - name: f7t-client-config
+          mountPath: /app/config.py
+          subPath: config.py
+          readOnly: True
+        - name: f7t-client-secrets
+          mountPath: /app/client_secrets.json
+          subPath: client_secrets.json
+          readOnly: True
+      volumes:
+      - emptyDir: {}
+        name: logs-endpoint
+      - name: f7t-client-config
+        configMap:
+          name: f7t-client-config-configmap
+      - name: f7t-client-secrets
+        configMap:
+          name: f7t-client-secrets-configmap
