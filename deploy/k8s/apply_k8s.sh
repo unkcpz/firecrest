@@ -17,6 +17,10 @@ echo "* Deleting services..."
 kubectl delete all --all --grace-period=3
 if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 
+echo "* Deleting network policies..."
+kubectl delete networkpolicy --all
+if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
+
 echo -n "* Killing port forwardings..."
 pkill -f "kubectl port-forward deploy-"
 echo ""
