@@ -18,7 +18,7 @@ networks:
 services:
   f7t-base:
     container_name: f7t-base
-    image: "localhost:32000/f7t-base:k8s"
+    image: "${registry}/f7t-base:k8s"
     build:
       context: ../../
       dockerfile: deploy/docker/base/Dockerfile
@@ -45,7 +45,7 @@ services:
 
   compute:
     container_name: compute
-    image: "localhost:32000/compute:k8s"
+    image: "${registry}/compute:k8s"
     build:
       context: ../../
       dockerfile: deploy/docker/compute/Dockerfile
@@ -64,7 +64,7 @@ services:
 
   status:
     container_name: status
-    image: "localhost:32000/status:k8s"
+    image: "${registry}/status:k8s"
     build:
       context: ../../
       dockerfile: deploy/docker/status/Dockerfile
@@ -82,7 +82,7 @@ services:
 
   storage:
     container_name: storage
-    image: "localhost:32000/storage:k8s"
+    image: "${registry}/storage:k8s"
     build:
       context: ../../
       dockerfile: deploy/docker/storage/Dockerfile
@@ -106,7 +106,7 @@ services:
 
   tasks:
     container_name: tasks
-    image: "localhost:32000/tasks:k8s"
+    image: "${registry}/tasks:k8s"
     build: 
       context: ../../
       dockerfile: deploy/docker/tasks/Dockerfile
@@ -132,7 +132,7 @@ services:
 
   utilities:
     container_name: utilities
-    image: "localhost:32000/utilities:k8s"
+    image: "${registry}/utilities:k8s"
     build: 
       context: ../../
       dockerfile: deploy/docker/utilities/Dockerfile
@@ -151,7 +151,7 @@ services:
 
   reservations:
     container_name: reservations
-    image: "localhost:32000/reservations:k8s"
+    image: "${registry}/reservations:k8s"
     build: 
       context: ../../
       dockerfile: deploy/docker/reservations/Dockerfile
@@ -171,7 +171,7 @@ services:
   # web client
   client:
     container_name: client
-    image: "localhost:32000/client:k8s"
+    image: "${registry}/client:k8s"
     build:
       context: ../../src/tests/template_client
       dockerfile: ./Dockerfile
@@ -189,7 +189,7 @@ services:
   # dummy cluster
   cluster:
     container_name: cluster
-    image: "localhost:32000/cluster:k8s"
+    image: "${registry}/cluster:k8s"
     build: 
       context: ../test-build
       dockerfile: ./cluster/Dockerfile
