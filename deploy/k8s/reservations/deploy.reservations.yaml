@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - image: localhost:32000/reservations:k8s
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         name: reservations
         ports:
         - containerPort: 5006

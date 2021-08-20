@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - image: localhost:32000/compute:k8s
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         name: compute
         ports:
         - containerPort: 5006

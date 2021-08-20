@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - image: localhost:32000/storage:k8s
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         name: storage
         ports:
         - containerPort: 5002
