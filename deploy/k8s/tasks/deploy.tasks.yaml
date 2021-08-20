@@ -30,7 +30,7 @@ spec:
         - mountPath: /redis
           name: redis-config          
       - name: tasks
-        image: demo_tasks
+        image: localhost:32000/tasks:k8s
         env:       
         - name: F7T_PERSIST_PORT
           value: "6379"
@@ -42,7 +42,7 @@ spec:
           value: "86400"
         - name: F7T_STORAGE_TASK_EXP_TIME
           value: "2678400"
-        imagePullPolicy: Never        
+        imagePullPolicy: Always        
         ports:
         - containerPort: 5003
         envFrom:

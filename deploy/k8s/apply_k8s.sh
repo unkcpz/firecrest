@@ -30,7 +30,7 @@ echo ""
 for ms in $microservices
 do
   echo -e "\n* Starting $ms..."
-  kubectl apply -f $ms -R
+  microk8s kubectl apply -f $ms -R
   if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
   echo "  done."
 done
