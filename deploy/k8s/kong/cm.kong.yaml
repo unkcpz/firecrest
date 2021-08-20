@@ -12,7 +12,7 @@ items:
         # global plugin: applies to all request
         config:
           #_comment: "MUST add exp (expiration) and nbf, not enabled by default"
-          claims_to_verify: [exp,nbf]
+          claims_to_verify: [exp]
       - name: request-termination
         route: reject
         config:
