@@ -26,7 +26,7 @@ services:
   # FirecREST microservices
   certificator:
     container_name: certificator
-    image: "localhost:32000/certificator:k8s"
+    image: "${registry}/certificator:k8s"
     build:
       context: ../../
       dockerfile: deploy/docker/certificator/Dockerfile
