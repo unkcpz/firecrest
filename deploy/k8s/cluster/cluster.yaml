@@ -16,7 +16,7 @@ items:
         hostname: cluster
         containers:
         - name: f7t-cluster
-          image: demo_cluster
+          image: localhost:32000/compute:k8s
           imagePullPolicy: Never
           ports:
           - containerPort: 22
