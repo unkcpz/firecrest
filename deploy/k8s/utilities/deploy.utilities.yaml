@@ -14,7 +14,7 @@ spec:
       generateName: firecrest.utilities-1-
     spec:
       containers:
-      - image: demo_utilities
+      - image: localhost:32000/utilities:k8s
         imagePullPolicy: Never
         name: utilities
         ports:

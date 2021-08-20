@@ -13,7 +13,7 @@ spec:
         app: storage
     spec:
       containers:
-      - image: demo_storage
+      - image: localhost:32000/storage:k8s
         imagePullPolicy: Never
         name: storage
         ports:

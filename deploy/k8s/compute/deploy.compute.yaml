@@ -13,7 +13,7 @@ spec:
         app: compute
     spec:
       containers:
-      - image: demo_compute
+      - image: localhost:32000/compute:k8s
         imagePullPolicy: Never
         name: compute
         ports:

@@ -13,7 +13,7 @@ spec:
         app: status      
     spec:
       containers:
-      - image: demo_status
+      - image: localhost:32000/status:k8s
         imagePullPolicy: Never
         name: status
         ports:

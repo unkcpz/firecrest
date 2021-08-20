@@ -13,7 +13,7 @@ spec:
         app: reservations
     spec:
       containers:
-      - image: demo_reservations
+      - image: localhost:32000/reservations:k8s
         imagePullPolicy: Never
         name: reservations
         ports:

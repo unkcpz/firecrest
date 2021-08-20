@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: f7t-client
-        image: demo_client
+        image: localhost:32000/client:k8s
         imagePullPolicy: Never
         ports:
         - containerPort: 7000
