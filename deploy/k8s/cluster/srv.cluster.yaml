@@ -4,6 +4,7 @@ items:
   kind: Service
   metadata:
     name: svc-cluster
+    namespace: public
   spec:
     type: ClusterIP
     selector:

@@ -4,6 +4,7 @@ items:
   kind: Deployment
   metadata:
     name: deploy-cluster
+    namespace: public
   spec:
     selector:
       matchLabels:
