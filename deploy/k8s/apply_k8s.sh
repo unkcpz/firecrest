@@ -66,27 +66,27 @@ if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 p="$!"
 
 wait_running keycloak public
-microk8s kubectl port-forward $pod 8080:8080 &> /dev/null &
+microk8s kubectl port-forward $pod 8080:8080 --namespace=public &> /dev/null &
 if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 p="$p $!"
 
 wait_running minio public
-microk8s kubectl port-forward $pod 9000:9000 &> /dev/null &
+microk8s kubectl port-forward $pod 9000:9000 --namespace=public &> /dev/null &
 if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 p="$p $!"
 
 wait_running jaeger public
-microk8s kubectl port-forward $pod 16686:16686 &> /dev/null &
+microk8s kubectl port-forward $pod 16686:16686 --namespace=public &> /dev/null &
 if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 p="$p $!"
 
 wait_running openapi public
-microk8s kubectl port-forward $pod 9090:8080 &> /dev/null &
+microk8s kubectl port-forward $pod 9090:8080 --namespace=public &> /dev/null &
 if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 p="$p $!"
 
 wait_running f7t-client public
-microk8s kubectl port-forward $pod 7000:5000 &> /dev/null &
+microk8s kubectl port-forward $pod 7000:5000 --namespace=public &> /dev/null &
 if [ $? -ne 0 ]; then echo 'failed.'; exit 1; fi
 p="$p $!"
 
