@@ -4,6 +4,7 @@ items:
   kind: Service
   metadata:
     name: svc-certificator
+    namespace: firecrest
   spec:
     type: ClusterIP
     selector:

@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deploy-status
+  namespace: firecrest
 spec:
   replicas: 1
   selector:
@@ -10,7 +11,8 @@ spec:
   template:
     metadata:
       labels:
-        app: status      
+        app: status
+        role: microservice    
     spec:
       containers:
       - image: localhost:32000/status:k8s

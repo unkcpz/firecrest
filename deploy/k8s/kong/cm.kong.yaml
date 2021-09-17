@@ -4,6 +4,7 @@ items:
   kind: ConfigMap
   metadata:
     name: f7t-kong
+    namespace: firecrest
   data:    
     kong.yaml: |
       _format_version: "1.1"

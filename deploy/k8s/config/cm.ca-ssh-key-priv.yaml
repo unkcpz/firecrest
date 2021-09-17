@@ -54,3 +54,4 @@ data:
 kind: ConfigMap
 metadata:
   name: f7t-ca-ssh-keys
+  namespace: firecrest

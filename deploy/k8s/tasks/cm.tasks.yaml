@@ -4,6 +4,7 @@ items:
   kind: ConfigMap
   metadata:
     name: f7t-redis
+    namespace: firecrest
   data:    
     start_redis.sh: |
       #!/bin/bash

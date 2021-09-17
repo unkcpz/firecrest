@@ -4,6 +4,7 @@ items:
   kind: Deployment
   metadata:
     name: deploy-certificator
+    namespace: firecrest
   spec:
     selector:
       matchLabels:

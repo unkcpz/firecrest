@@ -4,8 +4,9 @@ items:
   kind: Service
   metadata:
     name: svc-kong
+    namespace: firecrest
   spec:
-    type: NodePort
+    # type: NodePort
     selector:
       app: kong
     ports:
