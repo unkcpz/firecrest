@@ -21,7 +21,7 @@ items:
           message: "Invalid"
       - name: zipkin
         config:
-          http_endpoint: http://svc-jaeger:9411/api/v2/spans
+          http_endpoint: http://svc-jaeger.public:9411/api/v2/spans
           sample_ratio: 1
           include_credential: true
           traceid_byte_count: 16
