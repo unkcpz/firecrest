@@ -4,6 +4,7 @@ items:
   kind: Service
   metadata:
     name: svc-jaeger
+    namespace: public
   spec:
     ports:
     - name: "6831"

@@ -4,6 +4,7 @@ items:
   kind: Service
   metadata:
     name: svc-keycloak
+    namespace: public
   spec:
     type: ClusterIP
     selector:
@@ -14,9 +15,7 @@ items:
       targetPort: 8080
     - name: "9990"
       port: 9990
-      targetPort: 9990
-    selector:
-      app: keycloak
+      targetPort: 9990    
   status:
     loadBalancer: {}
 kind: List

@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-cluster
+  namespace: public
+spec:
+  selector:
+    matchLabels:
+      app: cluster
+  template:
+    metadata:
+      labels:
+        app: cluster
+    spec:
+      hostname: cluster
+      containers:
+      - name: f7t-cluster
+        image: localhost:32000/cluster:k8s
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 22

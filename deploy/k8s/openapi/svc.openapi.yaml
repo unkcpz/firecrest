@@ -4,6 +4,7 @@ items:
   kind: Service
   metadata:
     name: svc-openapi
+    namespace: public
   spec:
     ports:
     - name: "8080"
