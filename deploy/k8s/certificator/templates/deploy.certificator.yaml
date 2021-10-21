@@ -24,7 +24,7 @@ items:
           - mountPath: /opa-files/
             name: f7t-opa-vol
         - name: f7t-certificator
-          image: " {{ .Values.registry }}/certificator:{{ .Values.tag }}"
+          image: "{{ .Values.repository }}/certificator:{{ .Values.tag }}"
           imagePullPolicy: Always
           ports:
           - containerPort: 5010
