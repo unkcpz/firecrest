@@ -4,7 +4,7 @@ items:
   kind: ConfigMap
   metadata:
     name: f7t-opa-configmap
-    namespace: firecrest
+    namespace: {{ .Values.namespace }}
   data:
     data.json: |
       {

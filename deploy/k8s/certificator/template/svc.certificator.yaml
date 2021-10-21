@@ -4,7 +4,7 @@ items:
   kind: Service
   metadata:
     name: svc-certificator
-    namespace: firecrest
+    namespace: {{ namespace }}
   spec:
     type: ClusterIP
     selector:

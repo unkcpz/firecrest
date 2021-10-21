@@ -4,7 +4,7 @@ items:
   kind: Deployment
   metadata:
     name: deploy-certificator
-    namespace: firecrest
+    namespace: {{ .Values.namespace }}
   spec:
     selector:
       matchLabels:
@@ -24,7 +24,7 @@ items:
           - mountPath: /opa-files/
             name: f7t-opa-vol
         - name: f7t-certificator
-          image: localhost:32000/certificator:k8s
+          image: " {{ .Values.registry }}/certificator:{{ .Values.tag }}"
           imagePullPolicy: Always
           ports:
           - containerPort: 5010

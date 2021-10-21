@@ -1,0 +1,3 @@
+registry: art.cscs.ch/docker-group-fcrest
+tag: latest
+namespace: firecrest-dev
