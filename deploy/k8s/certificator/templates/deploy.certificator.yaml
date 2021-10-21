@@ -38,8 +38,8 @@ items:
           - mountPath: /user-key.pub
             name: f7t-cert-user-pub-vol
             subPath: user-key.pub
-          imagePullSecrets:
-          - "{{ .Values.registry-secret-creds }}"
+        imagePullSecrets:
+        - name: "{{ .Values.registry-secret-creds }}"
         volumes:
         - name: f7t-opa-vol
           configMap:
