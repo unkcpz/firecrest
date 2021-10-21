@@ -4,7 +4,7 @@ items:
   kind: Service
   metadata:
     name: svc-certificator
-    namespace: {{ namespace }}
+    namespace: {{ .Values.namespace }}
   spec:
     type: ClusterIP
     selector:
