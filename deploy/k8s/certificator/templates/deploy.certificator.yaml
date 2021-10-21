@@ -39,7 +39,7 @@ items:
             name: f7t-cert-user-pub-vol
             subPath: user-key.pub
         imagePullSecrets:
-        - name: "{{ .Values.registry-secret-creds }}"
+        - name: "{{ .Values.registry_secret_creds }}"
         volumes:
         - name: f7t-opa-vol
           configMap:
