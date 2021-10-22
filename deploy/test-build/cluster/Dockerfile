@@ -42,8 +42,8 @@ RUN set -x \
 RUN set -x \
     && cd slurm-$SLURM_VERSION \
     && ./configure --disable-debug --prefix=/usr --sysconfdir=/etc/slurm --libdir=/usr/lib64 \
-                   --disable-x11 --disable-glibtest --disable-gtktest --without-hdf5 --without-ofed 
-    # && make install > /dev/null
+                   --disable-x11 --disable-glibtest --disable-gtktest --without-hdf5 --without-ofed \
+    && make install > /dev/null
 
 RUN set -x \
     && rm -rf /slurm-$SLURM_VERSION  2> /dev/null \
