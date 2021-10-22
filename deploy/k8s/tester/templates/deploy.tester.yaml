@@ -1,10 +1,9 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: deploy-tester
+  name: job-tester
   namespace: {{ .Values.namespace }}
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: tester
@@ -22,6 +21,7 @@ spec:
         volumeMounts:
         - mountPath: /var/log
           name: logs-endpoint
+      #restartPolicy: Never
       {{ if .Values.registry_secret_creds }}
       imagePullSecrets:
       - name: "{{ .Values.registry_secret_creds }}"
