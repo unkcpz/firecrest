@@ -10,7 +10,7 @@ from $BASE_IMAGE
 RUN yum install -y openssh-7.4p1
 
 ADD deploy/docker/certificator/requirements.txt deps/requirements.txt
-RUN pip3 install -r deps/requirements.txt
+RUN pip3 install --force-reinstall -r deps/requirements.txt
 
 ADD src/certificator/certificator.py certificator.py
 
