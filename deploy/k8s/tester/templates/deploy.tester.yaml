@@ -15,7 +15,7 @@ spec:
         role: microservice
     spec:
       containers:
-      - image: "{{ .Values.repository }}/tester:{{ .Values.tag }}"
+      - image: "{{ .Values.registry }}/tester:{{ .Values.tag }}"
         imagePullPolicy: Always
         name: tester
         volumeMounts:

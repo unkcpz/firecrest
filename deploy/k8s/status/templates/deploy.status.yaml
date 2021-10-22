@@ -15,7 +15,7 @@ spec:
         role: microservice
     spec:
       containers:
-      - image: "{{ .Values.repository }}/status:{{ .Values.tag }}"
+      - image: "{{ .Values.registry }}/status:{{ .Values.tag }}"
         imagePullPolicy: Always
         name: status
         ports:
