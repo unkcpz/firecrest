@@ -4,7 +4,7 @@ items:
   kind: Deployment
   metadata:
     name: deploy-jaeger
-    namespace: public
+    namespace: {{ .Values.namespace }}
   spec:
     replicas: 1
     selector:
@@ -20,8 +20,8 @@ items:
         - image: jaegertracing/all-in-one:1.24
           env:
           - name: COLLECTOR_ZIPKIN_HOST_PORT
-            value: "9411"      
-          name: jaeger-k8-ci
+            value: "9411"
+          name: jaeger-k8
           resources: {}
         restartPolicy: Always
   status: {}
