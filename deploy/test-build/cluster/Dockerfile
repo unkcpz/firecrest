@@ -43,7 +43,7 @@ RUN set -x \
     && cd slurm-$SLURM_VERSION \
     && ./configure --disable-debug --prefix=/usr --sysconfdir=/etc/slurm --libdir=/usr/lib64 \
                    --disable-x11 --disable-glibtest --disable-gtktest --without-hdf5 --without-ofed  \
-    && make install > /dev/null
+    && # make install > /dev/null
 
 RUN set -x \
     && rm -rf /slurm-$SLURM_VERSION  2> /dev/null \
@@ -80,6 +80,7 @@ RUN set -x \
 RUN pip3 install supervisor
 ADD cluster/supervisord.conf /etc/supervisord.conf
 
+RUN mkdir -p /run/munge
 RUN chown -R munge:munge /var/log/munge && chmod 755 /var/log/munge && chmod 755 /run/munge
 
 
