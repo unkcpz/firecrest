@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deploy-utilities
-  namespace: firecrest
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
@@ -15,7 +15,7 @@ spec:
       generateName: firecrest.utilities-1-
     spec:
       containers:
-      - image: localhost:32000/utilities:k8s
+      - image: "{{ .Values.repository }}/utilities:{{ .Values.tag }}"
         imagePullPolicy: Always
         name: utilities
         ports:
@@ -29,6 +29,10 @@ spec:
         - mountPath: /user-key
           subPath: user-key
           name: user-key-public
+      {{ if .Values.registry_secret_creds }}
+      imagePullSecrets:
+      - name: "{{ .Values.registry_secret_creds }}"
+      {{ end }}
       volumes:
       - emptyDir: {}
         name: logs-endpoint
