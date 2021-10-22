@@ -18,6 +18,10 @@ spec:
       - image: "{{ .Values.registry }}/tester:{{ .Values.tag }}"
         imagePullPolicy: Always
         name: tester
+        command:
+        - pytest
+        args:
+        - "{{ .Values.tester_arg }}"
         volumeMounts:
         - mountPath: /var/log
           name: logs-endpoint
