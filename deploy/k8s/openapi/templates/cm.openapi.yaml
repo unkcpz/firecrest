@@ -4,8 +4,8 @@ items:
   kind: ConfigMap
   metadata:
     name: cm-openapi
-    namespace: public
-  data:    
+    namespace: {{ .Values.namespace }}
+  data:
     openapi.yaml: |
       ##  Copyright (c) 2019-2021, ETH Zurich. All rights reserved.
       ##

@@ -4,7 +4,7 @@ items:
   kind: Deployment
   metadata:
     name: deploy-openapi
-    namespace: public
+    namespace: {{ .Values.namespace }}
   spec:
     replicas: 1
     selector:
@@ -30,7 +30,7 @@ items:
           resources: {}
         volumes:
         - name: openapi-spec
-          configMap: 
+          configMap:
             name: cm-openapi
         restartPolicy: Always
   status: {}
