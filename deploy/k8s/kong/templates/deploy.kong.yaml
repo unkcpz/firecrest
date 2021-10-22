@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deploy-kong
-  namespace: firecrest
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:

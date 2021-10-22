@@ -4,7 +4,7 @@ items:
   kind: Service
   metadata:
     name: svc-kong
-    namespace: firecrest
+    namespace: {{ .Values.namespace }}
   spec:
     # type: NodePort
     selector:
