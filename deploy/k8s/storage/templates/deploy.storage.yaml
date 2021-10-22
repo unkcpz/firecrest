@@ -14,7 +14,7 @@ spec:
         app: storage
     spec:
       containers:
-      - image: "{{ .Values.repository }}/storage:{{ .Values.tag }}"
+      - image: "{{ .Values.registry }}/storage:{{ .Values.tag }}"
         imagePullPolicy: Always
         name: storage
         ports:

@@ -31,7 +31,7 @@ spec:
         - mountPath: /redis
           name: redis-config
       - name: tasks
-        image: "{{ .Values.repository }}/tasks:{{ .Values.tag }}"
+        image: "{{ .Values.registry }}/tasks:{{ .Values.tag }}"
         env:
         - name: F7T_PERSIST_PORT
           value: "6379"
