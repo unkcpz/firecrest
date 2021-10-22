@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deploy-cluster
-  namespace: public
+  namespace: {{ .Values.namespace }}
 spec:
   selector:
     matchLabels:
@@ -15,7 +15,11 @@ spec:
       hostname: cluster
       containers:
       - name: f7t-cluster
-        image: localhost:32000/cluster:k8s
+        image: "{{ .Values.registry }}/cluster:{{ .Values.tag }}"
         imagePullPolicy: Always
         ports:
         - containerPort: 22
+      {{ if .Values.registry_secret_creds }}
+      imagePullSecrets:
+      - name: "{{ .Values.registry_secret_creds }}"
+      {{ end }}
