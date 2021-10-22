@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deploy-storage
-  namespace: firecrest
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
@@ -14,7 +14,7 @@ spec:
         app: storage
     spec:
       containers:
-      - image: localhost:32000/storage:k8s
+      - image: "{{ .Values.repository }}/storage:{{ .Values.tag }}"
         imagePullPolicy: Always
         name: storage
         ports:
@@ -39,6 +39,10 @@ spec:
         - mountPath: /user-key
           subPath: user-key
           name: user-key-public
+      {{ if .Values.registry_secret_creds }}
+      imagePullSecrets:
+      - name: "{{ .Values.registry_secret_creds }}"
+      {{ end }}
       volumes:
       - emptyDir: {}
         name: logs-endpoint

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deploy-status
-  namespace: firecrest
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
@@ -12,10 +12,10 @@ spec:
     metadata:
       labels:
         app: status
-        role: microservice    
+        role: microservice
     spec:
       containers:
-      - image: localhost:32000/status:k8s
+      - image: "{{ .Values.repository }}/status:{{ .Values.tag }}"
         imagePullPolicy: Always
         name: status
         ports:
@@ -25,7 +25,11 @@ spec:
             name: common-env-file
         volumeMounts:
         - mountPath: /var/log
-          name: logs-endpoint        
+          name: logs-endpoint
+      {{ if .Values.registry_secret_creds }}
+      imagePullSecrets:
+      - name: "{{ .Values.registry_secret_creds }}"
+      {{ end }}
       volumes:
       - emptyDir: {}
-        name: logs-endpoint      
+        name: logs-endpoint
