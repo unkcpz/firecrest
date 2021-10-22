@@ -4,9 +4,9 @@ metadata:
   name: job-tester
   namespace: {{ .Values.namespace }}
 spec:
-  selector:
-    matchLabels:
-      app: tester
+#  selector:
+#    matchLabels:
+#      app: tester
   template:
     metadata:
       labels:
