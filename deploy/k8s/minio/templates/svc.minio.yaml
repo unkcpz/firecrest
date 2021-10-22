@@ -4,7 +4,7 @@ items:
   kind: Service
   metadata:
     name: svc-minio
-    namespace: public
+    namespace: {{ .Values.namespace }}
   spec:
     ports:
     - name: "9000"
