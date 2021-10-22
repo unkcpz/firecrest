@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deploy-tasks
-  namespace: firecrest
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
@@ -11,7 +11,7 @@ spec:
   template:
     metadata:
       labels:
-        app: tasks      
+        app: tasks
     spec:
       containers:
       - name: taskpersistence
@@ -29,10 +29,10 @@ spec:
         - mountPath: /data
           name: data-endpoint
         - mountPath: /redis
-          name: redis-config          
+          name: redis-config
       - name: tasks
-        image: localhost:32000/tasks:k8s
-        env:       
+        image: "{{ .Values.repository }}:32000/tasks:{{ .Values.tag }}"
+        env:
         - name: F7T_PERSIST_PORT
           value: "6379"
         - name: F7T_PERSIST_PWD
@@ -43,7 +43,7 @@ spec:
           value: "86400"
         - name: F7T_STORAGE_TASK_EXP_TIME
           value: "2678400"
-        imagePullPolicy: Always        
+        imagePullPolicy: Always
         ports:
         - containerPort: 5003
         envFrom:
@@ -51,12 +51,16 @@ spec:
             name: common-env-file
         volumeMounts:
         - mountPath: /var/log
-          name: logs-endpoint        
+          name: logs-endpoint
+      {{ if .Values.registry_secret_creds }}
+      imagePullSecrets:
+      - name: "{{ .Values.registry_secret_creds }}"
+      {{ end }}
       volumes:
-      - name: logs-endpoint      
-        emptyDir: {}        
+      - name: logs-endpoint
+        emptyDir: {}
       - name: data-endpoint
-        emptyDir: {}        
+        emptyDir: {}
       - name: redis-config
         configMap:
           name: f7t-redis
