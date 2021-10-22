@@ -21,7 +21,7 @@ spec:
         volumeMounts:
         - mountPath: /var/log
           name: logs-endpoint
-      #restartPolicy: Never
+      restartPolicy: Never
       {{ if .Values.registry_secret_creds }}
       imagePullSecrets:
       - name: "{{ .Values.registry_secret_creds }}"
