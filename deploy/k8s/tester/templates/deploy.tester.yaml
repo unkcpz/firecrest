@@ -30,3 +30,4 @@ spec:
       volumes:
       - emptyDir: {}
         name: logs-endpoint
+  backoffLimit: 0
