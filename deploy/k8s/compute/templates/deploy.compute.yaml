@@ -33,7 +33,7 @@ spec:
             port: 8080
           initialDelaySeconds: 5
           failureThreshold: 1
-      restartPolicy: Never
+      restartPolicy: Always
       {{ if .Values.registry_secret_creds }}
       imagePullSecrets:
       - name: "{{ .Values.registry_secret_creds }}"
