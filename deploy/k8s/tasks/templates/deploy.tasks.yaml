@@ -29,12 +29,7 @@ spec:
         - mountPath: /data
           name: data-endpoint
         - mountPath: /redis
-          name: redis-config
-        startupProbe:
-          tcpSocket:
-            port: 6379
-          initialDelaySeconds: 5
-          failureThreshold: 1
+          name: redis-config        
       - name: tasks
         image: "{{ .Values.registry }}/tasks:{{ .Values.tag }}"
         env:
