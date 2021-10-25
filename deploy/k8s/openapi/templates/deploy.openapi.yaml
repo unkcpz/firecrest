@@ -27,6 +27,11 @@ items:
             name: openapi-spec
           # ports:
           # - containerPort: 9090
+          startupProbe:
+            tcpSocket:
+              port: 9090
+            initialDelaySeconds: 5
+            failureThreshold: 1
           resources: {}
         volumes:
         - name: openapi-spec

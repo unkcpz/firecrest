@@ -23,6 +23,11 @@ items:
             value: "9411"
           name: jaeger-k8
           resources: {}
+          startupProbe:
+            tcpSocket:
+              port: 9411
+            initialDelaySeconds: 5
+            failureThreshold: 1
         restartPolicy: Always
   status: {}
 kind: List

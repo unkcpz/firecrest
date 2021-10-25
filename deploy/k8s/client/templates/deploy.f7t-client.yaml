@@ -30,6 +30,11 @@ spec:
           mountPath: /app/client_secrets.json
           subPath: client_secrets.json
           readOnly: True
+        startupProbe:
+          tcpSocket:
+             port: 7000
+          initialDelaySeconds: 5
+          failureThreshold: 1
       {{ if .Values.registry_secret_creds }}
       imagePullSecrets:
       - name: "{{ .Values.registry_secret_creds }}"

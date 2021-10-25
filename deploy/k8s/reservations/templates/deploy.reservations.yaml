@@ -28,6 +28,11 @@ spec:
         - mountPath: /user-key
           subPath: user-key
           name: user-key-public
+        startupProbe:
+          tcpSocket:
+            port: 5006
+          initialDelaySeconds: 5
+          failureThreshold: 1
       {{ if .Values.registry_secret_creds }}
       imagePullSecrets:
       - name: "{{ .Values.registry_secret_creds }}"

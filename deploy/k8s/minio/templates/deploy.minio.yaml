@@ -28,6 +28,11 @@ items:
           ports:
           - containerPort: 9000
           resources: {}
+          startupProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 5
+            failureThreshold: 1
         restartPolicy: Always
   status: {}
 kind: List

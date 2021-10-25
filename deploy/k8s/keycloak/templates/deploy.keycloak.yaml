@@ -48,6 +48,11 @@ items:
           - mountPath: /var/tmp/
             name: f7t-keycloak-volume
           resources: {}
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            failureThreshold: 3
         volumes:
         - name: f7t-keycloak-volume
           configMap:

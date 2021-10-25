@@ -52,6 +52,11 @@ spec:
         volumeMounts:
         - mountPath: /var/log
           name: logs-endpoint
+        startupProbe:
+          tcpSocket:
+            port: 5003
+          initialDelaySeconds: 5
+          failureThreshold: 1
       {{ if .Values.registry_secret_creds }}
       imagePullSecrets:
       - name: "{{ .Values.registry_secret_creds }}"

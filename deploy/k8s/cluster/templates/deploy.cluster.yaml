@@ -19,6 +19,11 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 22
+        startupProbe:
+          tcpSocket:
+            port: 22
+          initialDelaySeconds: 10
+          failureThreshold: 1
       {{ if .Values.registry_secret_creds }}
       imagePullSecrets:
       - name: "{{ .Values.registry_secret_creds }}"

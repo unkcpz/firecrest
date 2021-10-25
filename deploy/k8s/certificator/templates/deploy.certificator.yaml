@@ -38,6 +38,11 @@ items:
           - mountPath: /user-key.pub
             name: f7t-cert-user-pub-vol
             subPath: user-key.pub
+          startupProbe:
+            tcpSocket:
+              port: 5010
+            initialDelaySeconds: 5
+            failureThreshold: 1
         {{ if .Values.registry_secret_creds }}
         imagePullSecrets:
         - name: "{{ .Values.registry_secret_creds }}"

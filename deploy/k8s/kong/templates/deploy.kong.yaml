@@ -28,7 +28,12 @@ spec:
         - mountPath: /var/log
           name: logs-endpoint  
         - mountPath: /kong
-          name: kong-config      
+          name: kong-config  
+        startupProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 5
+          failureThreshold: 1    
       volumes:
       - emptyDir: {}
         name: logs-endpoint 

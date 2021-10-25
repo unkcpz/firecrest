@@ -30,7 +30,7 @@ spec:
           name: user-key-public 
         startupProbe:
           tcpSocket:
-            port: 8080
+            port: 5006
           initialDelaySeconds: 5
           failureThreshold: 1
       restartPolicy: Always
