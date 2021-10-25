@@ -23,6 +23,11 @@ items:
           volumeMounts:
           - mountPath: /opa-files/
             name: f7t-opa-vol
+          startupProbe:
+            tcpSocket:
+              port: 8181
+            initialDelaySeconds: 5
+            failureThreshold: 1
         - name: f7t-certificator
           image: "{{ .Values.registry }}/certificator:{{ .Values.tag }}"
           imagePullPolicy: Always

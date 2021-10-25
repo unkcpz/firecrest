@@ -29,7 +29,7 @@ items:
           # - containerPort: 9090
           startupProbe:
             tcpSocket:
-              port: 9090
+              port: 8080
             initialDelaySeconds: 5
             failureThreshold: 1
           resources: {}
