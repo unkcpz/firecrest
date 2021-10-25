@@ -18,7 +18,7 @@ spec:
         image: "{{ .Values.registry }}/client:{{ .Values.tag }}"
         imagePullPolicy: Always
         ports:
-        - containerPort: 7000
+        - containerPort: 5000
         volumeMounts:
         - name: logs-endpoint
           mountPath: /var/log
@@ -32,7 +32,7 @@ spec:
           readOnly: True
         startupProbe:
           tcpSocket:
-             port: 7000
+             port: 5000
           initialDelaySeconds: 5
           failureThreshold: 1
       {{ if .Values.registry_secret_creds }}
