@@ -18,6 +18,7 @@ spec:
         imagePullPolicy: Always
         name: tester
         command: ['pytest']
+        workingDir: {{ .Values.workingDir }}
         args: ['-m', '{{ .Values.tester_arg_mod }}', '-c', '{{ .Values.tester_arg_config }}', 'unit']
         volumeMounts:
         - mountPath: /var/log
