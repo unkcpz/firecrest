@@ -27,7 +27,13 @@ spec:
           name: logs-endpoint
         - mountPath: /user-key
           subPath: user-key
-          name: user-key-public   
+          name: user-key-public 
+        startupProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 5
+          failureThreshold: 1
+  
       {{ if .Values.registry_secret_creds }}
       imagePullSecrets:
       - name: "{{ .Values.registry_secret_creds }}"
