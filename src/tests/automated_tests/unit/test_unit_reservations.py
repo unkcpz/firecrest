@@ -20,7 +20,7 @@ if FIRECREST_URL:
 	RESERVATIONS_URL = os.environ.get("FIRECREST_URL") + "/reservations"
 else:
     RESERVATIONS_URL = os.environ.get("F7T_RESERVATIONS_URL")
-SYSTEM = os.environ.get("F7T_SYSTEMS_PUBLIC").split(";")[0]
+SYSTEM = os.environ.get("F7T_SYSTEMS_PUBLIC").strip('\'"').split(";")[0]
 
 # SSL parameters
 USE_SSL = os.environ.get("F7T_USE_SSL", False)
