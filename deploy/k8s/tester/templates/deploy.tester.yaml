@@ -20,6 +20,9 @@ spec:
         command: ['pytest']
         workingDir: {{ .Values.workingDir }}
         args: ['-m', '{{ .Values.tester_arg_mod }}', '-c', '{{ .Values.tester_arg_config }}', 'unit']
+        envFrom:
+        - configMapRef:
+          name: common-env-file
         volumeMounts:
         - mountPath: /var/log
           name: logs-endpoint
