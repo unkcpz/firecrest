@@ -16,8 +16,8 @@ if FIRECREST_URL:
 else:
     CERTIFICATOR_URL = os.environ.get("F7T_CERTIFICATOR_URL")	
 
-SYSTEM_NAME = os.environ.get("F7T_SYSTEMS_PUBLIC").split(";")[0]
-SYSTEM_ADDR = os.environ.get("F7T_SYSTEMS_INTERNAL_UTILITIES").split(";")[0]
+SYSTEM_NAME = os.environ.get("F7T_SYSTEMS_PUBLIC").strip('\'"').split(";")[0]
+SYSTEM_ADDR = os.environ.get("F7T_SYSTEMS_INTERNAL_UTILITIES").strip('\'"').split(";")[0]
 
 ### SSL parameters
 USE_SSL = os.environ.get("F7T_USE_SSL", False)

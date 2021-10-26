@@ -15,7 +15,7 @@ if FIRECREST_URL:
 else:
     STATUS_URL = os.environ.get("F7T_STATUS_URL")
 
-SYSTEMS = os.environ.get("F7T_SYSTEMS_PUBLIC").split(";")
+SYSTEMS = os.environ.get("F7T_SYSTEMS_PUBLIC").strip('\'"').split(";")
 
 ### SSL parameters
 USE_SSL = os.environ.get("F7T_USE_SSL", False)

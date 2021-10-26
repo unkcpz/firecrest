@@ -18,7 +18,7 @@ if FIRECREST_URL:
 else:
     UTILITIES_URL = os.environ.get("F7T_UTILITIES_URL")
 
-SERVER_UTILITIES = os.environ.get("F7T_SYSTEMS_PUBLIC").split(";")[0]
+SERVER_UTILITIES = os.environ.get("F7T_SYSTEMS_PUBLIC").strip('\'"').split(";")[0]
 
 ### SSL parameters
 USE_SSL = os.environ.get("F7T_USE_SSL", False)

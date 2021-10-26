@@ -17,7 +17,7 @@ else:
     COMPUTE_URL = os.environ.get("F7T_COMPUTE_URL")	
 
 JOBS_URL = COMPUTE_URL + "/jobs"
-SERVER_COMPUTE = os.environ.get("F7T_SYSTEMS_PUBLIC").split(";")[0]
+SERVER_COMPUTE = os.environ.get("F7T_SYSTEMS_PUBLIC").strip('\'"').split(";")[0]
 
 ### SSL parameters
 USE_SSL = os.environ.get("F7T_USE_SSL", False)
