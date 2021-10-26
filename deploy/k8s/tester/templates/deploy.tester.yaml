@@ -19,7 +19,7 @@ spec:
         name: tester
         command: ['pytest']
         workingDir: {{ .Values.workingDir }}
-        args: [{{ .Values.tester_args }}]
+        args: ['-m', '{{ .Values.tester_arg_mod }}', '-c', '{{ .Values.tester_arg_config }}', '{{ .Values.tester_arg_test }}']
         envFrom:
         - configMapRef:
             name: common-env-file
