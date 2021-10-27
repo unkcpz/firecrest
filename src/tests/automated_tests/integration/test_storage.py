@@ -22,7 +22,7 @@ else:
     UTILITIES_URL = os.environ.get("F7T_UTILITIES_URL")
 
 # same server used for utilities and external upload storage
-SERVER_UTILITIES_STORAGE = os.environ.get("F7T_SYSTEMS_PUBLIC").split(";")[0]
+SERVER_UTILITIES_STORAGE = os.environ.get("F7T_SYSTEMS_PUBLIC").strip('\'"').split(";")[0]
 OBJECT_STORAGE = os.environ.get("F7T_OBJECT_STORAGE")
 
 ### SSL parameters
