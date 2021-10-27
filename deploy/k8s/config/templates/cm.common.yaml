@@ -24,7 +24,7 @@ data:
   F7T_KONG_URL: http://svc-kong:8000
   F7T_KONG_UTILITIES_URL: http://svc-utilities:5004
   F7T_KONG_RESERVATIONS_URL: http://svc-reservations:5005
-  F7T_OBJECT_STORAGE: '''s3v4'''
+  F7T_OBJECT_STORAGE: s3v4
   F7T_OPA_URL: http://localhost:8181
   F7T_OPA_USE: "True"
   F7T_PERSISTENCE_IP: localhost
