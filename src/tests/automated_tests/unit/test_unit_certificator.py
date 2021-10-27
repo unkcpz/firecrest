@@ -10,8 +10,10 @@ import os
 from markers import host_environment_test
 import base64
 
-FIRECREST_URL = os.environ.get("FIRECREST_URL")
-if FIRECREST_URL:
+FIRECREST_URL = os.environ.get("FIRECREST_URL","")
+HOST_NETWORK  = (os.environ.get("HOST_NETWORK","false").lower() == True)
+
+if FIRECREST_URL and not HOST_NETWORK: 
 	CERTIFICATOR_URL = os.environ.get("FIRECREST_URL") + "/certificator"
 else:
     CERTIFICATOR_URL = os.environ.get("F7T_CERTIFICATOR_URL")	
