@@ -10,8 +10,10 @@ import json
 import os
 from markers import host_environment_test
 
-FIRECREST_URL = os.environ.get("FIRECREST_URL")
-if FIRECREST_URL:
+FIRECREST_URL = os.environ.get("FIRECREST_URL","")
+HOST_NETWORK  = (os.environ.get("HOST_NETWORK","false").lower() == "true")
+
+if FIRECREST_URL and (not HOST_NETWORK): 
 	TASKS_URL = os.environ.get("FIRECREST_URL") + "/tasks"
 else:
     TASKS_URL = os.environ.get("F7T_TASKS_URL")

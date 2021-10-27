@@ -11,8 +11,10 @@ from markers import host_environment_test
 from test_globals import *
 import time
 
-FIRECREST_URL = os.environ.get("FIRECREST_URL")
-if FIRECREST_URL:
+FIRECREST_URL = os.environ.get("FIRECREST_URL","")
+HOST_NETWORK  = (os.environ.get("HOST_NETWORK","false").lower() == "true")
+
+if FIRECREST_URL and (not HOST_NETWORK): 
 	STORAGE_URL = os.environ.get("FIRECREST_URL") + "/storage"    
 else:
     STORAGE_URL = os.environ.get("F7T_STORAGE_URL")
