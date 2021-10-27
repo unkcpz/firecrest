@@ -25,7 +25,7 @@ spec:
             name: common-env-file
         env:
         - name: HOST_NETWORK
-          value: {{ .Values.host_network }}
+          value: '{{ .Values.host_network }}'
         volumeMounts:
         - mountPath: /var/log
           name: logs-endpoint
