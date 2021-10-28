@@ -17,15 +17,17 @@ spec:
       - image: "{{ .Values.registry }}/tester:{{ .Values.tag }}"
         imagePullPolicy: Always
         name: tester
-        command: ['pytest']
+        command: ['bash']
         workingDir: {{ .Values.workingDir }}
-        args: ['-m', '{{ .Values.tester_arg_mod }}', '-c', '{{ .Values.tester_arg_config }}', '{{ .Values.tester_arg_test }}']
+        args: ['./tester_run.sh'] # ['-m', '{{ .Values.tester_arg_mod }}', '-c', '{{ .Values.tester_arg_config }}', '{{ .Values.tester_arg_test }}']
         envFrom:
         - configMapRef:
             name: common-env-file
         env:
         - name: HOST_NETWORK
           value: '{{ .Values.host_network }}'
+        - name: PYTEST_CONFIG_FILE
+          value: '{{ .Values.pytest_config_file }}'
         volumeMounts:
         - mountPath: /var/log
           name: logs-endpoint
