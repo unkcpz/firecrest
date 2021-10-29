@@ -24,8 +24,8 @@ spec:
         - configMapRef:
             name: common-env-file
         env:
-        - name: HOST_NETWORK
-          value: '{{ .Values.host_network }}'
+        - name: USE_GATEWAY
+          value: '{{ .Values.use_gateway }}'
         - name: PYTEST_CONFIG_FILE
           value: '{{ .Values.pytest_config_file }}'
         volumeMounts:
