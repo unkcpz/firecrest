@@ -8,7 +8,7 @@ import pytest
 import requests
 import os
 import time
-from ..unit.markers import skipif_not_uses_gateway
+from markers import skipif_not_uses_gateway
 
 
 FIRECREST_URL = os.environ.get("FIRECREST_URL")

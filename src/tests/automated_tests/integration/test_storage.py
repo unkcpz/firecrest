@@ -10,7 +10,7 @@ import os
 import time
 from test_globals import *
 import urllib.request, urllib.parse, urllib.error
-from ..unit.markers import skipif_not_uses_gateway
+from markers import skipif_not_uses_gateway
 
 FIRECREST_URL = os.environ.get("FIRECREST_URL")
 if FIRECREST_URL:
