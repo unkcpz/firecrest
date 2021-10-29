@@ -16,8 +16,8 @@ exit_code=$(( $? | exit_code ))
 pytest -m "not reservations" -c $PYTEST_CONFIG_FILE unit
 exit_code=$(( $? | exit_code ))
 
-# pytest -m "not reservations" -c $PYTEST_CONFIG_FILE integration
-# exit_code=$(( $? | exit_code ))
+pytest -m "not reservations" -c $PYTEST_CONFIG_FILE integration
+exit_code=$(( $? | exit_code ))
 
 echo "Finished $0 with status $exit_code"
 
