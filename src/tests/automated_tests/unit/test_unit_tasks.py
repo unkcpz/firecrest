@@ -85,7 +85,7 @@ def test_create_task(headers):
 	
 
 # Test query task status
-@skipif_not_uses_gateway
+@skipif_uses_gateway
 def test_get_task(headers):
 	resp = create_task(headers)
 	hash_id = resp.json()["hash_id"]	
