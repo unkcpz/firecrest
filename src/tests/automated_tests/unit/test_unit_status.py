@@ -7,10 +7,12 @@
 import pytest
 import requests
 import os
-
+from markers import skipif_not_uses_gateway
 
 FIRECREST_URL = os.environ.get("FIRECREST_URL")
-if FIRECREST_URL:
+USE_GATEWAY  = (os.environ.get("USE_GATEWAY","false").lower() == "true")
+
+if FIRECREST_URL and USE_GATEWAY:
 	STATUS_URL = os.environ.get("FIRECREST_URL") + "/status"
 else:
     STATUS_URL = os.environ.get("F7T_STATUS_URL")
@@ -22,7 +24,7 @@ USE_SSL = os.environ.get("F7T_USE_SSL", False)
 SSL_CRT = os.environ.get("F7T_SSL_CRT", "")
 SSL_PATH = "../../../deploy/test-build"
 
-
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("system",SYSTEMS)
 def test_status_system(system, headers):
 	url = "{}/systems/{}".format(STATUS_URL, system)
@@ -30,14 +32,14 @@ def test_status_system(system, headers):
 	print(resp.content)
 	assert 'description' in resp.json()
 	 
-
+@skipif_not_uses_gateway
 def test_status_systems(headers):
 	url = "{}/systems".format(STATUS_URL)
 	resp = requests.get(url, headers=headers, verify= (f"{SSL_PATH}{SSL_CRT}" if USE_SSL else False))
 	print(resp.content)
 	assert 'description' in resp.json()
 
-
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("service",["certificator", "utilities", "compute", "tasks", "storage","reservations"])
 def test_status_service(service, headers):
 	url = "{}/services/{}".format(STATUS_URL, service)
@@ -45,7 +47,7 @@ def test_status_service(service, headers):
 	print(resp.content)
 	assert 'description' in resp.json()
 
-
+@skipif_not_uses_gateway
 def test_status_services(headers):
 	url = "{}/services".format(STATUS_URL)
 	resp = requests.get(url, headers=headers, verify= (f"{SSL_PATH}{SSL_CRT}" if USE_SSL else False))
@@ -53,7 +55,7 @@ def test_status_services(headers):
 	print(resp.json())
 	assert 'description' in resp.json()
 
-
+@skipif_not_uses_gateway
 def test_parameters(headers):
 	print(STATUS_URL)
 	url = "{}/parameters".format(STATUS_URL)

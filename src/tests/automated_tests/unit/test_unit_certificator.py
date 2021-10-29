@@ -7,13 +7,13 @@
 import pytest
 import requests
 import os
-from markers import host_environment_test
+from markers import skipif_uses_gateway
 import base64
 
 FIRECREST_URL = os.environ.get("FIRECREST_URL","")
-HOST_NETWORK  = (os.environ.get("HOST_NETWORK","false").lower() == "true")
+USE_GATEWAY  = (os.environ.get("USE_GATEWAY","false").lower() == "true")
 
-if FIRECREST_URL and (not HOST_NETWORK): 
+if FIRECREST_URL and USE_GATEWAY: 
 	CERTIFICATOR_URL = os.environ.get("FIRECREST_URL") + "/certificator"
 else:
     CERTIFICATOR_URL = os.environ.get("F7T_CERTIFICATOR_URL")	
@@ -30,7 +30,7 @@ SSL_PATH = "../../../deploy/test-build"
 OPA_DATA = [("not_existing_system", "not_existing_addr", 401), (SYSTEM_NAME, SYSTEM_ADDR, 200)]
 
 # Test get a certificate
-@host_environment_test
+@skipif_uses_gateway
 def test_receive(headers):
 	# url = f"{CERTIFICATOR_URL}/?command=" + base64.urlsafe_b64encode("ls".encode()).decode()
 	params = {"command": base64.urlsafe_b64encode("ls".encode()).decode(),
@@ -39,7 +39,7 @@ def test_receive(headers):
 	print(resp.content)
 	assert resp.status_code == 200
 
-@host_environment_test
+@skipif_uses_gateway
 @pytest.mark.parametrize("machine, addr, expected_response_code", OPA_DATA)
 def test_opa(machine,addr,expected_response_code,headers):
 	# url = f"{CERTIFICATOR_URL}/?command=" + base64.urlsafe_b64encode("ls".encode()).decode()
@@ -51,7 +51,7 @@ def test_opa(machine,addr,expected_response_code,headers):
 
 
 # Test get status of certificator microservice
-@host_environment_test
+@skipif_uses_gateway
 def test_status(headers):
 	url = f"{CERTIFICATOR_URL}/status"
 	resp = requests.get(url, headers=headers, verify= (f"{SSL_PATH}{SSL_CRT}" if USE_SSL else False))

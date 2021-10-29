@@ -10,10 +10,10 @@ exit_code=0
 
 # We start with the reservation tests because other tests still need a proper cleanup step.
 # echo "running reservation tests..."
-# pytest -m "reservations" -c $PYTEST_CONFIG_FILE unit
-# exit_code=$(( $? | exit_code ))
+pytest -m "reservations" -c $PYTEST_CONFIG_FILE unit
+exit_code=$(( $? | exit_code ))
 
-pytest -m "not reservations" -c $PYTEST_CONFIG_FILE unit/test_unit_tasks.py
+pytest -m "not reservations" -c $PYTEST_CONFIG_FILE unit
 exit_code=$(( $? | exit_code ))
 
 # pytest -m "not reservations" -c $PYTEST_CONFIG_FILE integration

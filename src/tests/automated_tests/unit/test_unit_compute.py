@@ -7,11 +7,14 @@
 import pytest
 import requests
 import os
-from markers import host_environment_test
+from markers import skipif_uses_gateway, skipif_not_uses_gateway
 from test_globals import *
 
+
 FIRECREST_URL = os.environ.get("FIRECREST_URL")
-if FIRECREST_URL:
+USE_GATEWAY  = (os.environ.get("USE_GATEWAY","false").lower() == "true")
+
+if FIRECREST_URL and USE_GATEWAY:
 	COMPUTE_URL = os.environ.get("FIRECREST_URL") + "/compute"
 else:
     COMPUTE_URL = os.environ.get("F7T_COMPUTE_URL")	
@@ -39,6 +42,7 @@ def submit_job_upload(machine, headers):
 
 
 # Test send a job to the systems
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine, expected_response_code", [ (SERVER_COMPUTE, 201) , ("someservernotavailable", 400)])
 def test_submit_job_upload(machine, expected_response_code, headers):
 	resp = submit_job_upload(machine, headers)
@@ -46,6 +50,7 @@ def test_submit_job_upload(machine, expected_response_code, headers):
 	assert resp.status_code == expected_response_code
 
 # Test send a job to the systems
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine, targetPath, expected_response_code", [ 
 (SERVER_COMPUTE, "/srv/f7t/test_sbatch.sh", 201), 
 (SERVER_COMPUTE, "/srv/f7t/test_sbatch_forbidden.sh", 400),
@@ -66,6 +71,7 @@ def test_submit_job_path(machine, targetPath, expected_response_code, headers):
 
 
 # Test get all jobs from current user
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine, expected_response_code", DATA)
 def test_list_jobs(machine, expected_response_code, headers):
 	url = "{}".format(JOBS_URL)
@@ -76,6 +82,7 @@ def test_list_jobs(machine, expected_response_code, headers):
 
 
 # Test Retrieve information from an active jobid (jobid in the queue or running)
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine, expected_response_code",  [ (SERVER_COMPUTE, 400) , ("someservernotavailable", 400)])
 def test_list_job(machine, expected_response_code, headers):
 	# TODO: need to test valid
@@ -88,6 +95,7 @@ def test_list_job(machine, expected_response_code, headers):
 
 
 # Test cancel job from slurm
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine, expected_response_code", DATA)
 def test_cancel_job(machine, expected_response_code, headers):
 	# TODO: need to test valid and invalid jobid
@@ -100,6 +108,7 @@ def test_cancel_job(machine, expected_response_code, headers):
 
 
 # Test get account information with sacct command
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine, expected_response_code", DATA)
 def test_acct(machine, expected_response_code, headers):
 	jobid = "2,3"
@@ -112,7 +121,7 @@ def test_acct(machine, expected_response_code, headers):
 
 
 # Test get status of Jobs microservice
-@host_environment_test
+@skipif_uses_gateway
 def test_status(headers):
 	url = "{}/status".format(COMPUTE_URL)
 	resp = requests.get(url, headers=headers, verify= (f"{SSL_PATH}{SSL_CRT}" if USE_SSL else False))
