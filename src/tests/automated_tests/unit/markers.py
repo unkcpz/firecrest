@@ -7,4 +7,4 @@
 import os
 import pytest
 
-host_environment_test = pytest.mark.skipif(os.environ.get("HOST_NETWORK", "").lower() != "true", reason="test not valid for this environment")
+skipif_uses_gateway = pytest.mark.skipif(os.environ.get("USE_GATEWAY", "").lower() == "true", reason="This test uses the gateway to test microservice")
