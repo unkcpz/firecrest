@@ -9,7 +9,7 @@ import requests
 import json
 import os
 # from markers import host_environment_test
-from markers import skipif_uses_gateway
+from markers import skipif_uses_gateway, skipif_not_uses_gateway
 
 FIRECREST_URL = os.environ.get("FIRECREST_URL","")
 USE_GATEWAY  = (os.environ.get("USE_GATEWAY","false").lower() == "true")
@@ -68,7 +68,7 @@ def create_task(headers):
 
 
 # Test list all tasks
-@skipif_uses_gateway
+@skipif_not_uses_gateway
 def test_list_tasks(headers):
 	url = "{}/".format(TASKS_URL)
 	resp = requests.get(url, headers=headers, verify= (f"{SSL_PATH}{SSL_CRT}" if USE_SSL else False))
@@ -85,7 +85,7 @@ def test_create_task(headers):
 	
 
 # Test query task status
-@skipif_uses_gateway
+@skipif_not_uses_gateway
 def test_get_task(headers):
 	resp = create_task(headers)
 	hash_id = resp.json()["hash_id"]	
@@ -96,7 +96,7 @@ def test_get_task(headers):
 
 
 # Test query tasks which doesn't exists
-@skipif_uses_gateway
+@skipif_not_uses_gateway
 def test_get_task_not_exists(headers):
 	hash_id = "IDONTEXIST"
 	url = "{}/{}".format(TASKS_URL, hash_id)
