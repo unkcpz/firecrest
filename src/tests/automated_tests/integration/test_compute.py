@@ -8,6 +8,7 @@ import pytest
 import requests
 import os
 import time
+from ..unit.markers import skipif_not_uses_gateway
 
 
 FIRECREST_URL = os.environ.get("FIRECREST_URL")
@@ -67,6 +68,7 @@ def get_job_id(task_id, headers):
 
 
 # Test send a job to the system
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine", [SERVER_COMPUTE])
 def test_submit_job(machine, headers):
 	resp = submit_job(machine, headers)
@@ -74,6 +76,7 @@ def test_submit_job(machine, headers):
 	check_task_status(task_id, headers)
 
 # Test get all jobs from current user
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine", [SERVER_COMPUTE])
 def test_list_jobs(machine, headers):
 	headers.update({"X-Machine-Name": machine})
@@ -85,6 +88,7 @@ def test_list_jobs(machine, headers):
 	check_task_status(task_id, headers)
 
 # Test Retrieve information from an invalid jobid (jobid in the queue or running)
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine",  [SERVER_COMPUTE])
 def test_list_job(machine, headers):
 	jobid = -1
@@ -97,6 +101,7 @@ def test_list_job(machine, headers):
 	# check_task_status(task_id, headers, 400)
 
 # Test cancel job from slurm
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine", [SERVER_COMPUTE])
 def test_cancel_job(machine, headers):
 
@@ -116,6 +121,7 @@ def test_cancel_job(machine, headers):
 	check_task_status(resp.json()["task_id"],headers)
 
 # Test account information
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine", [SERVER_COMPUTE])
 def test_acct_job(machine, headers):
 

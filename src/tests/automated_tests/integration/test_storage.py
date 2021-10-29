@@ -10,6 +10,7 @@ import os
 import time
 from test_globals import *
 import urllib.request, urllib.parse, urllib.error
+from ..unit.markers import skipif_not_uses_gateway
 
 FIRECREST_URL = os.environ.get("FIRECREST_URL")
 if FIRECREST_URL:
@@ -48,6 +49,7 @@ def check_task_status(task_id, headers, final_expected_status = 200): # could be
 
 
 # test external file upload
+@skipif_not_uses_gateway
 def test_post_upload_request(headers):
 
     # request upload form
@@ -125,6 +127,7 @@ def test_post_upload_request(headers):
 
 # Test storage internal copy and then use utilities list command
 # to check copied file
+@skipif_not_uses_gateway
 @pytest.mark.parametrize("machine", [SERVER_UTILITIES_STORAGE])
 def test_internal_cp(machine, headers):
     # jobName, time, stageOutJobId
