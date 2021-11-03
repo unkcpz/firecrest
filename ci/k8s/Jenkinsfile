@@ -24,7 +24,6 @@ spec:
         K8S_CLUSTER_URL = credentials('K8S_CLUSTER_URL')
         DEPLOY_NAMESPACE = "firecrest-dev"
         GIT_COMMIT = "${env.GIT_COMMIT}"
-        GIT_COMMIT_SHORT = "${env.GIT_COMMIT:0:7}"
     }
 
     stages {
@@ -61,7 +60,7 @@ spec:
 
                     sh '''
                         #cd ${BUILD_NUMBER}/firecrest
-                        #GIT_COMMIT_SHORT=$(cat GIT_COMMIT_SHORT)
+                        GIT_COMMIT_SHORT=${GIT_COMMIT:0:7}
                         pwd
                         ls -la
 
@@ -96,7 +95,7 @@ spec:
                         export PATH=$PATH:$(pwd)/linux-amd64
                         helm list -n "$DEPLOY_NAMESPACE"
                         #cd ${BUILD_NUMBER}/firecrest
-                        #GIT_COMMIT_SHORT=$(cat GIT_COMMIT_SHORT)
+                        GIT_COMMIT_SHORT=${GIT_COMMIT:0:7}
 
                         cd deploy/k8s
                         ls -la
@@ -156,7 +155,7 @@ spec:
                         kubectl get pods -n "$DEPLOY_NAMESPACE"
 
                         #cd ${BUILD_NUMBER}/firecrest
-                        #GIT_COMMIT_SHORT=$(cat GIT_COMMIT_SHORT)
+                        GIT_COMMIT_SHORT=${GIT_COMMIT:0:7}
 
                         cd deploy/k8s
                         ls -la
