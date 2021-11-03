@@ -24,6 +24,7 @@ spec:
         K8S_CLUSTER_URL = credentials('K8S_CLUSTER_URL')
         DEPLOY_NAMESPACE = "firecrest-dev"
         GIT_COMMIT = "${env.GIT_COMMIT}"
+        GIT_COMMIT_SHORT = "${env.GIT_COMMIT.take(7)}"
     }
 
     stages {
@@ -60,15 +61,14 @@ spec:
 
                     sh '''
                         #cd ${BUILD_NUMBER}/firecrest
-                        GIT_COMMIT_SHORT=${GIT_COMMIT:0:7}
                         pwd
                         ls -la
 
-                        /kaniko/executor --context ./ --dockerfile deploy/docker/base/Dockerfile\
-                           --destination $REPO_PREFIX/f7t-base:$GIT_COMMIT_SHORT --cleanup
+                        #/kaniko/executor --context ./ --dockerfile deploy/docker/base/Dockerfile\
+                        #   --destination $REPO_PREFIX/f7t-base:$GIT_COMMIT_SHORT --cleanup
 
                         for ms in status certificator compute storage tasks utilities reservations; do
-                            /kaniko/executor --build-arg BASE_IMAGE=$REPO_PREFIX/f7t-base:$GIT_COMMIT_SHORT --registry-mirror $REGISTRY \
+                            /kaniko/executor --build-arg BASE_IMAGE=$REPO_PREFIX/f7t-base:latest --registry-mirror $REGISTRY \
                               --context ./ --dockerfile deploy/docker/$ms/Dockerfile --destination $REPO_PREFIX/$ms:$GIT_COMMIT_SHORT --cleanup
                         done
 
@@ -95,7 +95,6 @@ spec:
                         export PATH=$PATH:$(pwd)/linux-amd64
                         helm list -n "$DEPLOY_NAMESPACE"
                         #cd ${BUILD_NUMBER}/firecrest
-                        GIT_COMMIT_SHORT=${GIT_COMMIT:0:7}
 
                         cd deploy/k8s
                         ls -la
@@ -155,7 +154,6 @@ spec:
                         kubectl get pods -n "$DEPLOY_NAMESPACE"
 
                         #cd ${BUILD_NUMBER}/firecrest
-                        GIT_COMMIT_SHORT=${GIT_COMMIT:0:7}
 
                         cd deploy/k8s
                         ls -la
