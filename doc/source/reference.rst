@@ -2,10 +2,7 @@
 Reference Guide
 ===============
 
-.. note::
-    `This <api.html>`__ page could also be useful when the warnings are fixed.
-
-Includes all api calls from `firecrest-developers-api.yaml`.
+You can the full API in `https://firecrest-api.cscs.ch/` but some endpoints might not be available depending on your deployment.
 
 .. openapi:: ../openapi/firecrest-developers-api.yaml
    :group:
