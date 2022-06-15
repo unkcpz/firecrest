@@ -2,7 +2,7 @@
 Reference Guide
 ===============
 
-You can the full API in `https://firecrest-api.cscs.ch/` but some endpoints might not be available depending on your deployment.
+You can find the full API `here <https://firecrest-api.cscs.ch/>`__ but some endpoints might not be available depending on your deployment.
 
 .. openapi:: ../openapi/firecrest-developers-api.yaml
    :group:
