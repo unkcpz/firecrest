@@ -7,5 +7,11 @@ RUN pip3 install -r deps/requirements.txt
 ADD src/reservations/reservations.py reservations.py
 ADD src/common/cscs_api_common.py cscs_api_common.py
 
-ENTRYPOINT ["python3"]
-CMD ["reservations.py"]
+ENV F7T_RESERVATIONS_PORT 5000
+ENV F7T_LOG_PATH /var/log
+ENV F7T_USE_SSL True
+ENV F7T_SSL_CRT /ssl/f7t_internal.crt
+ENV F7T_SSL_KEY /ssl/f7t_internal.key
+
+ENTRYPOINT gunicorn --ciphers TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_AES_128_GCM_SHA256,DHE-RSA-AES256-GCM-SHA384,ECDHE-RSA-AES256-GCM-SHA384,ECDHE-RSA-AES128-GCM-SHA256 \
+                    --ssl-version TLSv1_2 --keyfile $F7T_SSL_KEY --certfile $F7T_SSL_CRT --bind :${F7T_RESERVATIONS_PORT} --error-logfile ${F7T_LOG_PATH}/reservations.gunicorn.log reservations:app
