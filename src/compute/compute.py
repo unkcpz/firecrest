@@ -5,14 +5,13 @@
 #  SPDX-License-Identifier: BSD-3-Clause
 #
 from flask import Flask, request, jsonify, g
-from logging.handlers import TimedRotatingFileHandler
 import threading
 import async_task
 #import traceback
 
 from cscs_api_common import check_auth_header, get_username, \
     exec_remote_command, create_task, update_task, clean_err_output, \
-    in_str, is_valid_file, get_boolean_var, validate_input, LogRequestFormatter
+    in_str, is_valid_file, get_boolean_var, validate_input, setup_logging
 
 from job_time import check_sacctTime
 
@@ -61,7 +60,6 @@ if USE_SPANK_PLUGIN != None:
         USE_SPANK_PLUGIN[i] = get_boolean_var(USE_SPANK_PLUGIN[i])
     # spank plugin option value
     SPANK_PLUGIN_OPTION = os.environ.get("F7T_SPANK_PLUGIN_OPTION","--nohome")
-
 else:
     # if not set, create a list of False values, one for each SYSTEM
     USE_SPANK_PLUGIN = [False]*len(SYS_INTERNALS)
@@ -81,8 +79,8 @@ FIRECREST_SERVICE = os.environ.get("F7T_FIRECREST_SERVICE", '').strip('\'"')
 TAIL_BYTES = os.environ.get("F7T_TAIL_BYTES",1000)
 
 #max file size for sbatch upload in MB (POST compute/job)
-MAX_FILE_SIZE=int(os.environ.get("F7T_UTILITIES_MAX_FILE_SIZE"))
-TIMEOUT = int(os.environ.get("F7T_UTILITIES_TIMEOUT"))
+MAX_FILE_SIZE = int(os.environ.get("F7T_UTILITIES_MAX_FILE_SIZE", "5"))
+TIMEOUT = int(os.environ.get("F7T_UTILITIES_TIMEOUT", "5"))
 
 # string to separate fields on squeue, avoid forbidden chars
 SQUEUE_SEP = ".:."
@@ -94,6 +92,8 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = int(MAX_FILE_SIZE) * 1024 * 1024
 
 debug = get_boolean_var(os.environ.get("F7T_DEBUG_MODE", False))
+
+logger = setup_logging(logging, 'compute')
 
 JAEGER_AGENT = os.environ.get("F7T_JAEGER_AGENT", "").strip('\'"')
 if JAEGER_AGENT != "":
@@ -1113,21 +1113,6 @@ def after_request(response):
 
 
 if __name__ == "__main__":
-    LOG_PATH = os.environ.get("F7T_LOG_PATH", '/var/log').strip('\'"')
-    # timed rotation: 1 (interval) rotation per day (when="D")
-    logHandler = TimedRotatingFileHandler(f'{LOG_PATH}/compute.log', when='D', interval=1)
-
-    logFormatter = LogRequestFormatter('%(asctime)s,%(msecs)d %(thread)s [%(TID)s] %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-                                     '%Y-%m-%dT%H:%M:%S')
-    logHandler.setFormatter(logFormatter)
-
-    # get app log (Flask+werkzeug+python)
-    logger = logging.getLogger()
-
-    # set handler to logger
-    logger.addHandler(logHandler)
-    logging.getLogger().setLevel(logging.INFO)
-
     if USE_SSL:
         app.run(debug=debug, host='0.0.0.0', port=COMPUTE_PORT, ssl_context=(SSL_CRT, SSL_KEY))
     else:

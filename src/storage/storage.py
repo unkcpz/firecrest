@@ -8,24 +8,19 @@ from flask import Flask, request, jsonify, g
 import json, tempfile, os
 import urllib
 import datetime
-
+import logging
 import async_task
 import threading
-# logging handler
-from logging.handlers import TimedRotatingFileHandler
 # common functions
 from cscs_api_common import check_auth_header, get_username
 from cscs_api_common import create_task, update_task, get_task_status
 from cscs_api_common import exec_remote_command
 from cscs_api_common import create_certificate
 from cscs_api_common import in_str
-from cscs_api_common import is_valid_file, is_valid_dir, check_command_error, get_boolean_var, validate_input, LogRequestFormatter
+from cscs_api_common import is_valid_file, is_valid_dir, check_command_error, get_boolean_var, validate_input, setup_logging
 
 # job_time_checker for correct SLURM job time in /xfer-internal tasks
 import job_time
-
-# for debug purposes
-import logging
 
 import requests
 from hashlib import md5
@@ -112,8 +107,9 @@ uploaded_files = {}
 # debug on console
 debug = get_boolean_var(os.environ.get("F7T_DEBUG_MODE", False))
 
-
 app = Flask(__name__)
+
+logger = setup_logging(logging, 'storage')
 
 JAEGER_AGENT = os.environ.get("F7T_JAEGER_AGENT", "").strip('\'"')
 if JAEGER_AGENT != "":
@@ -128,6 +124,216 @@ if JAEGER_AGENT != "":
 else:
     jaeger_tracer = None
     tracing = None
+
+
+
+# asynchronous check of upload_files to declare which is downloadable to FS
+def check_upload_files():
+
+    global staging
+
+    while True:
+
+        # Get updated task status from Tasks microservice DB backend (TaskPersistence)
+        get_upload_unfinished_tasks()
+
+        app.logger.info(f"Check files in Object Storage - Pendings uploads: {len(uploaded_files)}")
+
+        # create STATIC auxiliary upload list in order to avoid "RuntimeError: dictionary changed size during iteration"
+        # (this occurs since upload_files dictionary is shared between threads and since Python3 dict.items() trigger that error)
+        upl_list= [(task_id, upload) for task_id,upload in uploaded_files.items()]
+
+        for task_id,upload in upl_list:
+            #checks if file is ready or not for download to FileSystem
+            try:
+                task_status = async_task.status_codes[upload['status']]
+
+                headers = {}
+                app.logger.info(f"Status of {task_id}: {task_status}")
+
+                #if upload["status"] in [async_task.ST_URL_REC,async_task.ST_DWN_ERR] :
+                if upload["status"] == async_task.ST_URL_REC:
+                    app.logger.info(f"Task {task_id} -> File ready to upload or already downloaded")
+
+                    upl = uploaded_files[task_id]
+
+                    containername = upl["user"]
+                    prefix = task_id
+                    objectname = upl["source"]
+                    headers[TRACER_HEADER] = upl['trace_id']
+
+                    if not staging.is_object_created(containername,prefix,objectname):
+                        app.logger.info(f"{containername}/{prefix}/{objectname} isn't created in staging area, continue polling")
+                        continue
+
+                    # confirms that file is in OS (auth_header is not needed)
+                    update_task(task_id, headers, async_task.ST_UPL_CFM, msg=upload, is_json=True)
+                    upload["status"] = async_task.ST_UPL_CFM
+                    uploaded_files["task_id"] = upload
+                    os_to_fs_task = threading.Thread(target=os_to_fs, name=upl['trace_id'], args=(task_id,))
+                    os_to_fs_task.start()
+                # if the upload to OS is done but the download to FS failed, then resume
+                elif upload["status"] == async_task.ST_DWN_ERR:
+                    upl = uploaded_files[task_id]
+                    containername = upl["user"]
+                    prefix = task_id
+                    objectname = upl["source"]
+                    headers[TRACER_HEADER] = upl['trace_id']
+                    # if file has been deleted from OS, then erroneous upload process. Restart.
+                    if not staging.is_object_created(containername,prefix,objectname):
+                        app.logger.info(f"{containername}/{prefix}/{objectname} isn't created in staging area, task marked as erroneous")
+                        update_task(task_id, headers ,async_task.ERROR, "File was deleted from staging area. Start a new upload process")
+                        upload["status"] = async_task.ERROR
+                        continue
+
+                    # if file is still in OS, proceed to new download to FS
+                    update_task(task_id, headers, async_task.ST_DWN_BEG)
+                    upload["status"] = async_task.ST_DWN_BEG
+                    uploaded_files["task_id"] = upload
+                    os_to_fs_task = threading.Thread(target=os_to_fs, name=upl['trace_id'], args=(task_id,))
+                    os_to_fs_task.start()
+            except Exception as e:
+                app.logger.error(type(e), e)
+                continue
+
+        time.sleep(STORAGE_POLLING_INTERVAL)
+
+
+def create_staging():
+    # Object Storage object
+    global staging
+
+    staging = None
+
+    if OBJECT_STORAGE == "swift":
+
+        app.logger.info("Object Storage selected: SWIFT")
+
+        from swiftOS import Swift
+
+        # Object Storage URL & data:
+        SWIFT_PRIVATE_URL = os.environ.get("F7T_SWIFT_PRIVATE_URL")
+        SWIFT_PUBLIC_URL = os.environ.get("F7T_SWIFT_PUBLIC_URL")
+        SWIFT_API_VERSION = os.environ.get("F7T_SWIFT_API_VERSION")
+        SWIFT_ACCOUNT = os.environ.get("F7T_SWIFT_ACCOUNT")
+        SWIFT_USER = os.environ.get("F7T_SWIFT_USER")
+        SWIFT_PASS = os.environ.get("F7T_SWIFT_PASS")
+
+        priv_url = f"{SWIFT_PRIVATE_URL}/{SWIFT_API_VERSION}/AUTH_{SWIFT_ACCOUNT}"
+        publ_url = f"{SWIFT_PUBLIC_URL}/{SWIFT_API_VERSION}/AUTH_{SWIFT_ACCOUNT}"
+
+        staging = Swift(priv_url=priv_url,publ_url=publ_url, user=SWIFT_USER, passwd=SWIFT_PASS, secret=SECRET_KEY)
+
+    elif OBJECT_STORAGE == "s3v2":
+        app.logger.info("Object Storage selected: S3v2")
+        from s3v2OS import S3v2
+
+        # For S3:
+        S3_PRIVATE_URL = os.environ.get("F7T_S3_PRIVATE_URL")
+        S3_PUBLIC_URL  = os.environ.get("F7T_S3_PUBLIC_URL")
+        S3_ACCESS_KEY  = os.environ.get("F7T_S3_ACCESS_KEY")
+        S3_SECRET_KEY  = os.environ.get("F7T_S3_SECRET_KEY")
+
+        staging = S3v2(priv_url=S3_PRIVATE_URL, publ_url=S3_PUBLIC_URL, user=S3_ACCESS_KEY, passwd=S3_SECRET_KEY)
+
+    elif OBJECT_STORAGE == "s3v4":
+        app.logger.info("Object Storage selected: S3v4")
+        from s3v4OS import S3v4
+
+        # For S3:
+        S3_PRIVATE_URL = os.environ.get("F7T_S3_PRIVATE_URL")
+        S3_PUBLIC_URL  = os.environ.get("F7T_S3_PUBLIC_URL")
+        S3_ACCESS_KEY  = os.environ.get("F7T_S3_ACCESS_KEY")
+        S3_SECRET_KEY  = os.environ.get("F7T_S3_SECRET_KEY")
+
+        staging = S3v4(priv_url=S3_PRIVATE_URL, publ_url=S3_PUBLIC_URL, user=S3_ACCESS_KEY, passwd=S3_SECRET_KEY)
+
+    else:
+        app.logger.warning("No Object Storage for staging area was set.")
+
+
+def get_upload_unfinished_tasks():
+    # cleanup upload dictionary
+    global uploaded_files
+    uploaded_files = {}
+
+    app.logger.info(f"Staging Area Used: {staging.priv_url} - ObjectStorage Technology: {staging.get_object_storage()}")
+
+    try:
+        # query Tasks microservice for previous tasks. Allow 30 seconds to answer
+
+        # only unfinished upload process
+        status_code = [async_task.ST_URL_ASK, async_task.ST_URL_REC, async_task.ST_UPL_CFM, async_task.ST_DWN_BEG, async_task.ST_DWN_ERR]
+        retval=requests.get(f"{TASKS_URL}/taskslist", json={"service": "storage", "status_code":status_code}, timeout=30, verify=(SSL_CRT if USE_SSL else False))
+
+        if not retval.ok:
+            app.logger.error("Error getting tasks from Tasks microservice: query failed with status {retval.status_code}, STORAGE microservice will not be fully functional. Next try will be in {STORAGE_POLLING_INTERVAL} seconds")
+            return
+
+        queue_tasks = retval.json()
+
+        # queue_tasks structure: "tasks"{
+        #                                  task_{id1}: {..., data={} }
+        #                                  task_{id2}: {..., data={} }  }
+        # data is the field containing every
+
+        queue_tasks = queue_tasks["tasks"]
+
+        n_tasks = 0
+
+        for key,task in queue_tasks.items():
+
+            task = json.loads(task)
+
+            # iterating over queue_tasls
+            try:
+                data = task["data"]
+
+                # check if task is a non ending /xfer-external/upload downloading
+                # from SWIFT to filesystem and it crashed before download finished,
+                # so it can be re-initiated with /xfer-external/upload-finished
+                # In that way it's is marked as erroneous
+
+                if task["status"] == async_task.ST_DWN_BEG:
+                    task["status"] = async_task.ST_DWN_ERR
+                    task["description"] = "Storage has been restarted, process will be resumed"
+                    headers = {}
+                    headers[TRACER_HEADER] = data['trace_id']
+                    update_task(task["hash_id"], headers, async_task.ST_DWN_ERR, data, is_json=True)
+
+                uploaded_files[task["hash_id"]] = data
+
+                n_tasks += 1
+
+            except KeyError as e:
+                app.logger.error(e)
+                app.logger.error(task["data"])
+                app.logger.error(key)
+
+            except Exception as e:
+                app.logger.error(data)
+                app.logger.error(e)
+                app.logger.error(type(e))
+
+        app.logger.info(f"Not finished upload tasks recovered from taskpersistance: {n_tasks}")
+
+    except Exception as e:
+        app.logger.warning("Error querying TASKS microservice: STORAGE microservice will not be fully functional")
+        app.logger.error(e)
+
+
+def init_storage():
+    # should check Tasks tasks than belongs to storage
+    create_staging()
+    get_upload_unfinished_tasks()
+
+    # aynchronously checks uploaded_files for complete download to FS
+    upload_check = threading.Thread(target=check_upload_files, name='storage-check-upload-files')
+    upload_check.start()
+
+
+# checks QueuePersistence and retakes all tasks
+init_storage()
 
 
 def get_tracing_headers(req):
@@ -248,78 +454,6 @@ def os_to_fs(task_id):
 
     except Exception as e:
         app.logger.error(e)
-
-
-# asynchronous check of upload_files to declare which is downloadable to FS
-def check_upload_files():
-
-    global staging
-
-    while True:
-
-        # Get updated task status from Tasks microservice DB backend (TaskPersistence)
-        get_upload_unfinished_tasks()
-
-        app.logger.info(f"Check files in Object Storage - Pendings uploads: {len(uploaded_files)}")
-
-        # create STATIC auxiliary upload list in order to avoid "RuntimeError: dictionary changed size during iteration"
-        # (this occurs since upload_files dictionary is shared between threads and since Python3 dict.items() trigger that error)
-        upl_list= [(task_id, upload) for task_id,upload in uploaded_files.items()]
-
-        for task_id,upload in upl_list:
-            #checks if file is ready or not for download to FileSystem
-            try:
-                task_status = async_task.status_codes[upload['status']]
-
-                headers = {}
-                app.logger.info(f"Status of {task_id}: {task_status}")
-
-                #if upload["status"] in [async_task.ST_URL_REC,async_task.ST_DWN_ERR] :
-                if upload["status"] == async_task.ST_URL_REC:
-                    app.logger.info(f"Task {task_id} -> File ready to upload or already downloaded")
-
-                    upl = uploaded_files[task_id]
-
-                    containername = upl["user"]
-                    prefix = task_id
-                    objectname = upl["source"]
-                    headers[TRACER_HEADER] = upl['trace_id']
-
-                    if not staging.is_object_created(containername,prefix,objectname):
-                        app.logger.info(f"{containername}/{prefix}/{objectname} isn't created in staging area, continue polling")
-                        continue
-
-                    # confirms that file is in OS (auth_header is not needed)
-                    update_task(task_id, headers, async_task.ST_UPL_CFM, msg=upload, is_json=True)
-                    upload["status"] = async_task.ST_UPL_CFM
-                    uploaded_files["task_id"] = upload
-                    os_to_fs_task = threading.Thread(target=os_to_fs, name=upl['trace_id'], args=(task_id,))
-                    os_to_fs_task.start()
-                # if the upload to OS is done but the download to FS failed, then resume
-                elif upload["status"] == async_task.ST_DWN_ERR:
-                    upl = uploaded_files[task_id]
-                    containername = upl["user"]
-                    prefix = task_id
-                    objectname = upl["source"]
-                    headers[TRACER_HEADER] = upl['trace_id']
-                    # if file has been deleted from OS, then erroneous upload process. Restart.
-                    if not staging.is_object_created(containername,prefix,objectname):
-                        app.logger.info(f"{containername}/{prefix}/{objectname} isn't created in staging area, task marked as erroneous")
-                        update_task(task_id, headers ,async_task.ERROR, "File was deleted from staging area. Start a new upload process")
-                        upload["status"] = async_task.ERROR
-                        continue
-
-                    # if file is still in OS, proceed to new download to FS
-                    update_task(task_id, headers, async_task.ST_DWN_BEG)
-                    upload["status"] = async_task.ST_DWN_BEG
-                    uploaded_files["task_id"] = upload
-                    os_to_fs_task = threading.Thread(target=os_to_fs, name=upl['trace_id'], args=(task_id,))
-                    os_to_fs_task.start()
-            except Exception as e:
-                app.logger.error(type(e), e)
-                continue
-
-        time.sleep(STORAGE_POLLING_INTERVAL)
 
 
 
@@ -928,129 +1062,6 @@ def status():
     return jsonify(success="ack"), 200
 
 
-def create_staging():
-    # Object Storage object
-    global staging
-
-    staging = None
-
-    if OBJECT_STORAGE == "swift":
-
-        app.logger.info("Object Storage selected: SWIFT")
-
-        from swiftOS import Swift
-
-        # Object Storage URL & data:
-        SWIFT_PRIVATE_URL = os.environ.get("F7T_SWIFT_PRIVATE_URL")
-        SWIFT_PUBLIC_URL = os.environ.get("F7T_SWIFT_PUBLIC_URL")
-        SWIFT_API_VERSION = os.environ.get("F7T_SWIFT_API_VERSION")
-        SWIFT_ACCOUNT = os.environ.get("F7T_SWIFT_ACCOUNT")
-        SWIFT_USER = os.environ.get("F7T_SWIFT_USER")
-        SWIFT_PASS = os.environ.get("F7T_SWIFT_PASS")
-
-        priv_url = f"{SWIFT_PRIVATE_URL}/{SWIFT_API_VERSION}/AUTH_{SWIFT_ACCOUNT}"
-        publ_url = f"{SWIFT_PUBLIC_URL}/{SWIFT_API_VERSION}/AUTH_{SWIFT_ACCOUNT}"
-
-        staging = Swift(priv_url=priv_url,publ_url=publ_url, user=SWIFT_USER, passwd=SWIFT_PASS, secret=SECRET_KEY)
-
-    elif OBJECT_STORAGE == "s3v2":
-        app.logger.info("Object Storage selected: S3v2")
-        from s3v2OS import S3v2
-
-        # For S3:
-        S3_PRIVATE_URL = os.environ.get("F7T_S3_PRIVATE_URL")
-        S3_PUBLIC_URL  = os.environ.get("F7T_S3_PUBLIC_URL")
-        S3_ACCESS_KEY  = os.environ.get("F7T_S3_ACCESS_KEY")
-        S3_SECRET_KEY  = os.environ.get("F7T_S3_SECRET_KEY")
-
-        staging = S3v2(priv_url=S3_PRIVATE_URL, publ_url=S3_PUBLIC_URL, user=S3_ACCESS_KEY, passwd=S3_SECRET_KEY)
-
-    elif OBJECT_STORAGE == "s3v4":
-        app.logger.info("Object Storage selected: S3v4")
-        from s3v4OS import S3v4
-
-        # For S3:
-        S3_PRIVATE_URL = os.environ.get("F7T_S3_PRIVATE_URL")
-        S3_PUBLIC_URL  = os.environ.get("F7T_S3_PUBLIC_URL")
-        S3_ACCESS_KEY  = os.environ.get("F7T_S3_ACCESS_KEY")
-        S3_SECRET_KEY  = os.environ.get("F7T_S3_SECRET_KEY")
-
-        staging = S3v4(priv_url=S3_PRIVATE_URL, publ_url=S3_PUBLIC_URL, user=S3_ACCESS_KEY, passwd=S3_SECRET_KEY)
-
-    else:
-        app.logger.warning("No Object Storage for staging area was set.")
-
-def get_upload_unfinished_tasks():
-
-    # cleanup upload dictionary
-    global uploaded_files
-    uploaded_files = {}
-
-    app.logger.info(f"Staging Area Used: {staging.priv_url} - ObjectStorage Technology: {staging.get_object_storage()}")
-
-    try:
-        # query Tasks microservice for previous tasks. Allow 30 seconds to answer
-
-        # only unfinished upload process
-        status_code = [async_task.ST_URL_ASK, async_task.ST_URL_REC, async_task.ST_UPL_CFM, async_task.ST_DWN_BEG, async_task.ST_DWN_ERR]
-        retval=requests.get(f"{TASKS_URL}/taskslist", json={"service": "storage", "status_code":status_code}, timeout=30, verify=(SSL_CRT if USE_SSL else False))
-
-        if not retval.ok:
-            app.logger.error("Error getting tasks from Tasks microservice: query failed with status {retval.status_code}, STORAGE microservice will not be fully functional. Next try will be in {STORAGE_POLLING_INTERVAL} seconds")
-            return
-
-        queue_tasks = retval.json()
-
-        # queue_tasks structure: "tasks"{
-        #                                  task_{id1}: {..., data={} }
-        #                                  task_{id2}: {..., data={} }  }
-        # data is the field containing every
-
-        queue_tasks = queue_tasks["tasks"]
-
-        n_tasks = 0
-
-        for key,task in queue_tasks.items():
-
-            task = json.loads(task)
-
-            # iterating over queue_tasls
-            try:
-                data = task["data"]
-
-                # check if task is a non ending /xfer-external/upload downloading
-                # from SWIFT to filesystem and it crashed before download finished,
-                # so it can be re-initiated with /xfer-external/upload-finished
-                # In that way it's is marked as erroneous
-
-                if task["status"] == async_task.ST_DWN_BEG:
-                    task["status"] = async_task.ST_DWN_ERR
-                    task["description"] = "Storage has been restarted, process will be resumed"
-                    headers = {}
-                    headers[TRACER_HEADER] = data['trace_id']
-                    update_task(task["hash_id"], headers, async_task.ST_DWN_ERR, data, is_json=True)
-
-                uploaded_files[task["hash_id"]] = data
-
-                n_tasks += 1
-
-            except KeyError as e:
-                app.logger.error(e)
-                app.logger.error(task["data"])
-                app.logger.error(key)
-
-            except Exception as e:
-                app.logger.error(data)
-                app.logger.error(e)
-                app.logger.error(type(e))
-
-        app.logger.info(f"Not finished upload tasks recovered from taskpersistance: {n_tasks}")
-
-    except Exception as e:
-        app.logger.warning("Error querying TASKS microservice: STORAGE microservice will not be fully functional")
-        app.logger.error(e)
-
-
 @app.before_request
 def f_before_request():
     new_headers = {}
@@ -1068,35 +1079,7 @@ def after_request(response):
     return response
 
 
-def init_storage():
-    # should check Tasks tasks than belongs to storage
-    create_staging()
-    get_upload_unfinished_tasks()
-
-
 if __name__ == "__main__":
-    LOG_PATH = os.environ.get("F7T_LOG_PATH", '/var/log').strip('\'"')
-    # timed rotation: 1 (interval) rotation per day (when="D")
-    logHandler = TimedRotatingFileHandler(f'{LOG_PATH}/storage.log', when='D', interval=1)
-
-    logFormatter = LogRequestFormatter('%(asctime)s,%(msecs)d %(thread)s [%(TID)s] %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-                                     '%Y-%m-%dT%H:%M:%S')
-    logHandler.setFormatter(logFormatter)
-
-    # get app log (Flask+werkzeug+python)
-    logger = logging.getLogger()
-
-    # set handler to logger
-    logger.addHandler(logHandler)
-    logging.getLogger().setLevel(logging.INFO)
-
-    # checks QueuePersistence and retakes all tasks
-    init_storage()
-
-    # aynchronously checks uploaded_files for complete download to FS
-    upload_check = threading.Thread(target=check_upload_files, name='storage-check-upload-files')
-    upload_check.start()
-
     if USE_SSL:
         app.run(debug=debug, host='0.0.0.0', use_reloader=False, port=STORAGE_PORT, ssl_context=(SSL_CRT, SSL_KEY))
     else:

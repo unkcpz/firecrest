@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: BSD-3-Clause
 #
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import os
 import jwt
 import stat
@@ -15,7 +16,6 @@ import json
 import functools
 from flask import request, jsonify, g
 import requests
-import urllib
 import base64
 import io
 import re
@@ -815,3 +815,21 @@ class LogRequestFormatter(logging.Formatter):
                 record.TID = 'notid'
 
         return super().format(record)
+
+def setup_logging(logging, service):
+    LOG_PATH = os.environ.get("F7T_LOG_PATH", '/var/log').strip('\'"')
+    # timed rotation: 1 (interval) rotation per day (when="D")
+    logHandler = TimedRotatingFileHandler(f'{LOG_PATH}/{service}.log', when='D', interval=1)
+
+    logFormatter = LogRequestFormatter('%(asctime)s,%(msecs)d %(thread)s [%(TID)s] %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+                                     '%Y-%m-%dT%H:%M:%S')
+    logHandler.setFormatter(logFormatter)
+
+    # get app log (Flask+werkzeug+python)
+    logger = logging.getLogger()
+
+    # set handler to logger
+    logger.addHandler(logHandler)
+    logging.getLogger().setLevel(logging.INFO)
+
+    return logger

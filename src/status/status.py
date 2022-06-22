@@ -6,12 +6,11 @@
 #
 from flask import Flask, jsonify, request, g
 import requests
-from logging.handlers import TimedRotatingFileHandler
 import logging
 import multiprocessing as mp
 
 # common modules
-from cscs_api_common import check_auth_header, get_boolean_var, LogRequestFormatter, get_username
+from cscs_api_common import check_auth_header, get_boolean_var, get_username, setup_logging
 
 import paramiko
 import socket
@@ -44,19 +43,20 @@ SSL_KEY = os.environ.get("F7T_SSL_KEY", "")
 
 
 ### parameters
-UTILITIES_MAX_FILE_SIZE = os.environ.get("F7T_UTILITIES_MAX_FILE_SIZE")
-UTILITIES_TIMEOUT = os.environ.get("F7T_UTILITIES_TIMEOUT")
-STORAGE_TEMPURL_EXP_TIME = os.environ.get("F7T_STORAGE_TEMPURL_EXP_TIME")
-STORAGE_MAX_FILE_SIZE = os.environ.get("F7T_STORAGE_MAX_FILE_SIZE")
-OBJECT_STORAGE=os.environ.get("F7T_OBJECT_STORAGE")
+UTILITIES_MAX_FILE_SIZE = os.environ.get("F7T_UTILITIES_MAX_FILE_SIZE", 'default')
+UTILITIES_TIMEOUT = os.environ.get("F7T_UTILITIES_TIMEOUT", 'default')
+STORAGE_TEMPURL_EXP_TIME = os.environ.get("F7T_STORAGE_TEMPURL_EXP_TIME", 'default')
+STORAGE_MAX_FILE_SIZE = os.environ.get("F7T_STORAGE_MAX_FILE_SIZE", 'default')
+OBJECT_STORAGE = os.environ.get("F7T_OBJECT_STORAGE", '(none)')
 
 TRACER_HEADER = "uber-trace-id"
 
 # debug on console
 debug = get_boolean_var(os.environ.get("F7T_DEBUG_MODE", False))
 
-
 app = Flask(__name__)
+
+logger = setup_logging(logging, 'status')
 
 JAEGER_AGENT = os.environ.get("F7T_JAEGER_AGENT", "").strip('\'"')
 if JAEGER_AGENT != "":
@@ -71,6 +71,16 @@ if JAEGER_AGENT != "":
 else:
     jaeger_tracer = None
     tracing = None
+
+def set_services():
+    for servicename in SERVICES:
+        URL_ENV_VAR = f"F7T_{servicename.upper()}_URL"
+        serviceurl = os.environ.get(URL_ENV_VAR)
+        if serviceurl:
+            SERVICES_DICT[servicename] = serviceurl
+
+# create services list
+set_services()
 
 
 def get_tracing_headers(req):
@@ -87,13 +97,6 @@ def get_tracing_headers(req):
     new_headers[AUTH_HEADER_NAME] = req.headers[AUTH_HEADER_NAME]
     ID = new_headers.get(TRACER_HEADER, '')
     return new_headers, ID
-
-def set_services():
-    for servicename in SERVICES:
-        URL_ENV_VAR = f"F7T_{servicename.upper()}_URL"
-        serviceurl = os.environ.get(URL_ENV_VAR)
-        if serviceurl:
-            SERVICES_DICT[servicename] = serviceurl
 
 # test individual service function
 def test_service(servicename, status_list, trace_header=None):
@@ -175,9 +178,9 @@ def test_system(machinename, headers, status_list=[]):
         username = get_username(headers[AUTH_HEADER_NAME])
 
         for fs in filesystems.split(","):
-        
-            r = requests.get(f"{UTILITIES_URL}/ls", 
-                                params={"targetPath":f"{fs}/{username}"}, 
+
+            r = requests.get(f"{UTILITIES_URL}/ls",
+                                params={"targetPath":f"{fs}/{username}"},
                                 headers=headers,
                                 verify=(SSL_CRT if USE_SSL else False))
 
@@ -250,7 +253,7 @@ def status_system(machinename):
     if status == -1:
         out={"system":machinename, "status":"not available", "description":"System does not accept connections"}
         return jsonify(description="System information", out=out), 200
-    
+
 
     out = {"system": machinename, "status": "available", "description": "System ready"}
     return jsonify(description="System information", out=out), 200
@@ -293,7 +296,7 @@ def status_systems():
     #
         if status == -4:
             filesystem = status_list[0]["filesystem"]
-            ret_dict={"system":machinename, "status":"not available", "description": f"Filesystem {filesystem} is not available"}            
+            ret_dict={"system":machinename, "status":"not available", "description": f"Filesystem {filesystem} is not available"}
         elif status == -2:
              ret_dict = {"system": system, "status": "not available", "description": "System down"}
         elif status == -1:
@@ -335,7 +338,7 @@ def status_service(servicename):
         description = "server up, flask down"
         return jsonify(service=servicename,status=status,description=description), 200
 
-    
+
     status="available"
     description="server up & flask running"
     return jsonify(service=servicename,status=status,description=description), 200
@@ -443,24 +446,6 @@ def after_request(response):
 
 
 if __name__ == "__main__":
-    LOG_PATH = os.environ.get("F7T_LOG_PATH", '/var/log').strip('\'"')
-    # timed rotation: 1 (interval) rotation per day (when="D")
-    logHandler=TimedRotatingFileHandler(f'{LOG_PATH}/status.log', when='D', interval=1)
-
-    logFormatter = LogRequestFormatter('%(asctime)s,%(msecs)d %(thread)s [%(TID)s] %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-                                     '%Y-%m-%dT%H:%M:%S')
-    logHandler.setFormatter(logFormatter)
-
-    # get app log (Flask+werkzeug+python)
-    logger = logging.getLogger()
-
-    # set handler to logger
-    logger.addHandler(logHandler)
-    logging.getLogger().setLevel(logging.INFO)
-
-    # create services list
-    set_services()
-
     if USE_SSL:
         app.run(debug=debug, host='0.0.0.0', port=STATUS_PORT, ssl_context=(SSL_CRT, SSL_KEY))
     else:

@@ -27,7 +27,6 @@ def get_boolean_var(var):
     # True, true or TRUE
     # Yes, yes or YES
     # 1
-
     return var.upper() == "TRUE" or var.upper() == "YES" or var == "1"
 
 AUTH_HEADER_NAME = 'Authorization'
@@ -83,13 +82,68 @@ else:
     jaeger_tracer = None
     tracing = None
 
+# formatter is executed for every log
+class LogRequestFormatter(logging.Formatter):
+    def format(self, record):
+        try:
+            # try to get TID from Flask g object, it's set on @app.before_request on each microservice
+            record.TID = g.TID
+        except:
+            try:
+                record.TID = threading.current_thread().name
+            except:
+                record.TID = 'notid'
+        return super().format(record)
+
+def setup_logging(logging, service):
+    LOG_PATH = os.environ.get("F7T_LOG_PATH", '/var/log').strip('\'"')
+    # timed rotation: 1 (interval) rotation per day (when="D")
+    logHandler = TimedRotatingFileHandler(f'{LOG_PATH}/{service}.log', when='D', interval=1)
+
+    logFormatter = LogRequestFormatter('%(asctime)s,%(msecs)d %(thread)s [%(TID)s] %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+                                     '%Y-%m-%dT%H:%M:%S')
+    logHandler.setFormatter(logFormatter)
+
+    logger = logging.getLogger()
+    # set handler to logger
+    logger.addHandler(logHandler)
+    logging.getLogger().setLevel(logging.INFO)
+    # disable Flask internal logging to avoid full url exposure
+    logging.getLogger('werkzeug').disabled = True
+
+    if OPA_USE:
+        logging.info(f"OPA: enabled, using {OPA_URL}/{POLICY_PATH}")
+    else:
+        logging.info(f"OPA: disabled")
+
+    return logger
+
+def check_key_permission():
+    # check that CA private key has proper permissions: 400 (no user write, and no access for group and others)
+    import stat, sys
+    try:
+        cas = os.stat('ca-key').st_mode
+        if oct(cas & 0o477) != '0o400':
+            msg = "ERROR: wrong 'ca-key' permissions, please set to 400. Exiting."
+            app.logger.error(msg)
+            sys.exit(msg)
+    except OSError as e:
+        msg = f"ERROR: couldn't stat 'ca-key', message: {e.strerror} - Exiting."
+        app.logger.error(msg)
+        sys.exit(msg)
+
+
+logger = setup_logging(logging, 'certificator')
+
+check_key_permission()
+
+
 # check user authorization on endpoint
 # using Open Policy Agent
 #
 # use:
 # check_user_auth(username,system)
 def check_user_auth(username,system):
-
     # check if OPA is active
     if OPA_USE:
         input = {"input":{"user": f"{username}", "system": f"{system}"}}
@@ -318,59 +372,8 @@ def after_request(response):
     logger.info('%s %s %s %s %s', request.remote_addr, request.method, request.scheme, request.path, response.status)
     return response
 
-# formatter is executed for every log
-class LogRequestFormatter(logging.Formatter):
-    def format(self, record):
-        try:
-            # try to get TID from Flask g object, it's set on @app.before_request on each microservice
-            record.TID = g.TID
-        except:
-            try:
-                record.TID = threading.current_thread().name
-            except:
-                record.TID = 'notid'
-
-        return super().format(record)
-
 
 if __name__ == "__main__":
-    LOG_PATH = os.environ.get("F7T_LOG_PATH", '/var/log').strip('\'"')
-    # timed rotation: 1 (interval) rotation per day (when="D")
-    logHandler = TimedRotatingFileHandler(f'{LOG_PATH}/certificator.log', when='D', interval=1)
-
-    logFormatter = LogRequestFormatter('%(asctime)s,%(msecs)d %(thread)s [%(TID)s] %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-                                     '%Y-%m-%dT%H:%M:%S')
-    logHandler.setFormatter(logFormatter)
-
-    # get app log (Flask+werkzeug+python)
-    logger = logging.getLogger()
-
-    # set handler to logger
-    logger.addHandler(logHandler)
-
-    logging.getLogger().setLevel(logging.INFO)
-
-    # disable Flask internal logging to avoid full url exposure
-    logging.getLogger('werkzeug').disabled = True
-
-    # check that CA private key has proper permissions: 400 (no user write, and no access for group and others)
-    import stat, sys
-    try:
-        cas = os.stat('ca-key').st_mode
-        if oct(cas & 0o477) != '0o400':
-            msg = "ERROR: wrong 'ca-key' permissions, please set to 400. Exiting."
-            app.logger.error(msg)
-            sys.exit(msg)
-    except OSError as e:
-        msg = f"ERROR: couldn't stat 'ca-key', message: {e.strerror} - Exiting."
-        app.logger.error(msg)
-        sys.exit(msg)
-
-    if OPA_USE:
-        logging.info(f"OPA: enabled, using {OPA_URL}/{POLICY_PATH}")
-    else:
-        logging.info(f"OPA: disabled")
-
     if USE_SSL:
         app.run(debug=debug, host='0.0.0.0', port=CERTIFICATOR_PORT, ssl_context=(SSL_CRT, SSL_KEY))
     else:
