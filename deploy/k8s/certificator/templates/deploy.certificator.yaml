@@ -37,7 +37,7 @@ items:
             - configMapRef:
                 name: common-env-file
           command: ["sh"]
-          args: ["-c", "cp /tmp/ca-key /ca-key; chmod 400 /ca-key; ls -l /; python3 certificator.py"]
+          args: ["-c", "cp /tmp/ca-key /ca-key; chmod 400 /ca-key; ls -l /; gunicorn --ciphers TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_AES_128_GCM_SHA256,DHE-RSA-AES256-GCM-SHA384,ECDHE-RSA-AES256-GCM-SHA384,ECDHE-RSA-AES128-GCM-SHA256 --ssl-version TLSv1_2 --keyfile /ssl/f7t_internal.key --certfile /ssl/f7t_internal.crt --bind :5010 --error-logfile /var/log/certificator.gunicorn.log certificator:app"]
           volumeMounts:
           - mountPath: /tmp/ca-key #since ConfiMap mount
             name: f7t-cert-vol
