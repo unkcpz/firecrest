@@ -180,19 +180,19 @@ services:
       - ./demo_client/client_secrets.json:/app/client_secrets.json:ro
       - ./logs/client:/var/log:delegated
 
-  # dummy cluster
-  cluster:
-    container_name: cluster
-    build: 
-      context: ../test-build
-      dockerfile: ./cluster/Dockerfile
-      network: host
-    networks:
-      firecrest-internal:
-        ipv4_address: 192.168.220.12
-    hostname: cluster
-    volumes:
-      - ./logs/cluster/:/var/log/slurm/:delegated
+  # # dummy cluster
+  # cluster:
+  #   container_name: cluster
+  #   build: 
+  #     context: ../test-build
+  #     dockerfile: ./cluster/Dockerfile
+  #     network: host
+  #   networks:
+  #     firecrest-internal:
+  #       ipv4_address: 192.168.220.12
+  #   hostname: cluster
+  #   volumes:
+  #     - ./logs/cluster/:/var/log/slurm/:delegated
 
   # complementary 3rd party services
   keycloak:
