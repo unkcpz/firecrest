@@ -32,7 +32,7 @@ consumers:
     jwt_secrets:
     - key: http://localhost:8080/auth/realms/kcrealm
       algorithm: "RS256"
-      rsa_public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqB44q32bQp8LbyW6dQvgsjseXESkLT1g5LQKGb+P79AC+nOAtxhn8i/kmgc6zsQH8NlUtNJruLxlzdo2/OGmlDGYZH1x6VmAwvJPJ4er0xPUrvZ8YclxYQC16PY5LFiQRNBMRyQwP5Kne1O46FpmADFVWMfoabdnaqoXexxB56b25o8tE2ulRBgfpnrRgZAvf7kWjugRCNO06FV074FVMYHA1aBk0ICyaFCDM/Tb5oaDyGr5c/ZvdrRUrw8vaiYyMgaAnnJPL75cebGoHeMJaEyZalsHA+iuhRAfeAwpSClsmhVqnfH7a7hqrqumVRo27dydqmfVgpFjU5gbFcBZ5wIDAQAB\n-----END PUBLIC KEY-----"
+      rsa_public_key: "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA56KU32nxDaZscFaw6nV/\njJnH+/qbj+oRob0N+eZbmhVdebNTN4clsLWlGhK0s2+miv8llKNfGgDkJLcK/m49\nIPDb9bOtjUXKSshbTXoJtzlWrabW0pCVnSNOQyiJUCGatrTFlFv3pZEzXarXzA2K\nz4CnUAhxG6C4rRsJJH9S6+tpwVZ9+KtjDki6NT/Gp2+q4eaW2Z1Ju6NfjZLuE1IE\nPCDvsdsnFnkipIwaKk/W4+cSRpCUHApfeccAucM8ddVy35vUuM5jknl/Az2ty4K3\nsTIT+3lNT1XpyRdr20R9zGTEQTmZG4o7WuCZkJtEb4zAu4jpMFTJbiUkUtzhfCv0\nGd+dAfqZzy+scms6V/NogbNPm8V6QxQQLXwrKPnP2YbcFVEqVh+3n02LdCEXnDgN\n90g8eoPQ0Bpm+LlDoVllVLVujBZTXez6xaKEvSPNxnJM2zSKje1mUXinUWURsCai\nH09d5vMYXYBMBXTtSOIHyLaApFFxLDBOnHIJxv2l60P7uE6HSkW3IlrpUp/AfRiH\n6ifSpuBOeRWt3mWowkul+LaAdf5LzFdRTm9d8Tt7hHgESbohXXPlM2FAaqDJKnLP\n2ZHkU394gwEUDGqRlQhOh+rVCS+Lyv36kjeuSmA+SdmMC68a/q6sDaO1jbjBI8Bw\nkmMlJR5fR9NAQ6iO/MJRsnMCAwEAAQ==\n-----END PUBLIC KEY-----"
 
 routes:
 - name: reject
