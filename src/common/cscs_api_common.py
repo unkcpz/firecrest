@@ -209,7 +209,7 @@ def create_certificate(headers, cluster_name, cluster_addr, command=None, option
         os.symlink(os.getcwd() + "/user-key.pub", td + "/user-key.pub")  # link on temp dir
         os.symlink(os.getcwd() + "/user-key", td + "/user-key")  # link on temp dir
         certf = open(td + "/user-key-cert.pub", 'w')
-        certf.write(jcert["certificate"])
+        # certf.write(jcert["certificate"])
         certf.close()
         # stat.S_IRUSR -> owner has read permission
         os.chmod(td + "/user-key-cert.pub", stat.S_IRUSR)
@@ -270,19 +270,36 @@ def exec_remote_command(headers, system_name, system_addr, action, file_transfer
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         ipaddr = system_addr.split(':')
-        host = ipaddr[0]
+        hostname = ipaddr[0]
         if len(ipaddr) == 1:
             port = 22
         else:
             port = int(ipaddr[1])
 
-        client.connect(hostname=host, port=port,
-                       username=username,
-                       key_filename=pub_cert,
-                       allow_agent=False,
-                       look_for_keys=False,
-                       timeout=10,
-                       disabled_algorithms={'keys': ['rsa-sha2-256', 'rsa-sha2-512']})
+        username = get_username(headers[AUTH_HEADER_NAME])
+        
+        user_key = "/user-key"
+        ## with jump proxy
+        jump_hostname = '10.19.81.248'
+        gw_client = paramiko.SSHClient()
+        gw_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        gw_client.connect(hostname=jump_hostname, port=port,
+                        username=username, 
+                        key_filename=user_key,
+                        allow_agent=False,
+                        look_for_keys=False,
+                        timeout=10)
+        sock = gw_client.get_transport().open_channel(
+            'direct-tcpip', (hostname, 22), ('', 0)
+        )
+        
+        client.connect(hostname=hostname, port=port,
+                        username=username, 
+                        key_filename=user_key,
+                        allow_agent=False,
+                        look_for_keys=False,
+                        sock=sock,
+                        timeout=10)
 
         if F7T_SSH_CERTIFICATE_WRAPPER:
             if debug:
@@ -420,7 +437,7 @@ def exec_remote_command(headers, system_name, system_addr, action, file_transfer
         logging.error(type(e), exc_info=True)
         logging.error(e)
         result = {"error": 1, "msg": str(e)}
-
+        
     # second: time out
     except socket.timeout as e:
         logging.error(type(e), exc_info=True)

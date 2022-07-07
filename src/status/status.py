@@ -153,17 +153,37 @@ def test_system(machinename, headers, status_list=[]):
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         ipaddr = machine.split(':')
-        host = ipaddr[0]
+        hostname = ipaddr[0]
         if len(ipaddr) == 1:
             port = 22
         else:
             port = int(ipaddr[1])
 
-        client.connect(hostname=host, port=port,
-                       username="dummycscs", password="dummycscs",
-                       timeout=10,
-                       disabled_algorithms={'keys': ['rsa-sha2-256', 'rsa-sha2-512']})
-
+        username = get_username(headers[AUTH_HEADER_NAME])
+        
+        user_key = "/user-key"
+        ## with jump proxy
+        jump_hostname = '10.19.81.248'
+        gw_client = paramiko.SSHClient()
+        gw_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        gw_client.connect(hostname=jump_hostname, port=port,
+                        username=username, 
+                        key_filename=user_key,
+                        allow_agent=False,
+                        look_for_keys=False,
+                        timeout=10)
+        sock = gw_client.get_transport().open_channel(
+            'direct-tcpip', (hostname, 22), ('', 0)
+        )
+        
+        client.connect(hostname=hostname, port=port,
+                        username=username, 
+                        key_filename=user_key,
+                        allow_agent=False,
+                        look_for_keys=False,
+                        sock=sock,
+                        timeout=10)
+        
     except paramiko.ssh_exception.AuthenticationException as e:
         # host up and SSH working, but returns (with reasons) authentication error
         app.logger.error(type(e))
@@ -217,6 +237,25 @@ def test_system(machinename, headers, status_list=[]):
         app.logger.error(type(e))
         app.logger.error(e)
         status_list.append({"status": -2, "system": machinename})
+    else:
+        ## TESTING FILESYSTEMS
+        headers["X-Machine-Name"] = machinename
+
+        username = get_username(headers[AUTH_HEADER_NAME])
+
+        for fs in filesystems.split(","):
+        
+            r = requests.get(f"{UTILITIES_URL}/ls", 
+                                params={"targetPath":f"{fs}/{username}"}, 
+                                headers=headers,
+                                verify=(SSL_CRT if USE_SSL else False))
+
+            if not r.ok:
+                app.logger.error("Status: -4")
+                status_list.append({"status": -4, "system": machinename, "filesystem": fs})
+                return
+
+        status_list.append({"status": 0, "system": machinename})
 
     finally:
         client.close()

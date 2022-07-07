@@ -39,7 +39,7 @@ services:
       - 5010:5010
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key.pub:/user-key.pub:ro
+      - /home/jyu/.ssh/firecrest/user-key.pub:/user-key.pub:ro
       - ../test-build/environment/keys/ca-key:/ca-key:ro
       - ./ssl:/ssl
 
@@ -58,7 +58,7 @@ services:
       - 5006:5006
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
+      - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
       - ./ssl:/ssl
 
   status:
@@ -76,6 +76,7 @@ services:
       - 5001:5001
     volumes:
       - ./logs/firecrest:/var/log:delegated
+      - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
       - ./ssl:/ssl
 
   storage:
@@ -99,7 +100,7 @@ services:
         ipv4_address: 192.168.220.5
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
+      - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
       - ./ssl:/ssl
 
   tasks:
@@ -142,7 +143,7 @@ services:
       - 5004:5004
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
+      - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
       - ./ssl:/ssl
 
   # reservations:
@@ -160,7 +161,7 @@ services:
   #     - 5005:5005
   #   volumes:
   #     - ./logs/firecrest:/var/log:delegated
-  #     - ../test-build/environment/keys/user-key:/user-key:ro
+  #     - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
   #     - ./ssl:/ssl
 
   # # web client
