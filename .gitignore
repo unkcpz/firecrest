@@ -7,6 +7,6 @@ __pycache__/
 **/minio/data/
 **/deploy/demo/minio/
 doc/build/
-deploy/demo/
+**/deploy/demo/logs/
 
 .aux/

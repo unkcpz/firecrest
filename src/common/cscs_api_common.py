@@ -209,7 +209,7 @@ def create_certificate(headers, cluster_name, cluster_addr, command=None, option
         os.symlink(os.getcwd() + "/user-key.pub", td + "/user-key.pub")  # link on temp dir
         os.symlink(os.getcwd() + "/user-key", td + "/user-key")  # link on temp dir
         certf = open(td + "/user-key-cert.pub", 'w')
-        # certf.write(jcert["certificate"])
+        certf.write(jcert["certificate"])
         certf.close()
         # stat.S_IRUSR -> owner has read permission
         os.chmod(td + "/user-key-cert.pub", stat.S_IRUSR)
