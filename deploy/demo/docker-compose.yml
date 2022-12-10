@@ -8,6 +8,7 @@ version: '3.4'
 
 networks:
   firecrest-internal:
+    name: f7t
     driver: bridge
     ipam:
       driver: default
@@ -39,7 +40,7 @@ services:
       - 5010:5010
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key.pub:/user-key.pub:ro
+      - /home/jyu/.ssh/firecrest/user-key.pub:/user-key.pub:ro
       - ../test-build/environment/keys/ca-key:/ca-key:ro
       - ./ssl:/ssl
 
@@ -58,7 +59,7 @@ services:
       - 5006:5006
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
+      - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
       - ./ssl:/ssl
 
   status:
@@ -76,6 +77,7 @@ services:
       - 5001:5001
     volumes:
       - ./logs/firecrest:/var/log:delegated
+      - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
       - ./ssl:/ssl
 
   storage:
@@ -99,7 +101,7 @@ services:
         ipv4_address: 192.168.220.5
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
+      - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
       - ./ssl:/ssl
 
   tasks:
@@ -142,74 +144,74 @@ services:
       - 5004:5004
     volumes:
       - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
+      - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
       - ./ssl:/ssl
 
-  reservations:
-    container_name: reservations
-    build: 
-      context: ../../
-      dockerfile: deploy/docker/reservations/Dockerfile
-      network: host
-    env_file:
-      - ./common/common.env
-    networks:
-      firecrest-internal:
-        ipv4_address: 192.168.220.8
-    ports:
-      - 5005:5005
-    volumes:
-      - ./logs/firecrest:/var/log:delegated
-      - ../test-build/environment/keys/user-key:/user-key:ro
-      - ./ssl:/ssl
+  # reservations:
+  #   container_name: reservations
+  #   build: 
+  #     context: ../../
+  #     dockerfile: deploy/docker/reservations/Dockerfile
+  #     network: host
+  #   env_file:
+  #     - ./common/common.env
+  #   networks:
+  #     firecrest-internal:
+  #       ipv4_address: 192.168.220.8
+  #   ports:
+  #     - 5005:5005
+  #   volumes:
+  #     - ./logs/firecrest:/var/log:delegated
+  #     - /home/jyu/.ssh/firecrest/user-key:/user-key:ro
+  #     - ./ssl:/ssl
 
-  # web client
-  client:
-    container_name: client
-    build:
-      context: ../../src/tests/template_client
-      dockerfile: ./Dockerfile
-      network: host
-    networks:
-      firecrest-internal:
-        ipv4_address: 192.168.220.30
-    ports:
-      - "7000:5000"
-    volumes:
-      - ./demo_client/config.py:/app/config.py:ro
-      - ./demo_client/client_secrets.json:/app/client_secrets.json:ro
-      - ./logs/client:/var/log:delegated
+  # # web client
+  # client:
+  #   container_name: client
+  #   build:
+  #     context: ../../src/tests/template_client
+  #     dockerfile: ./Dockerfile
+  #     network: host
+  #   networks:
+  #     firecrest-internal:
+  #       ipv4_address: 192.168.220.30
+  #   ports:
+  #     - "7000:5000"
+  #   volumes:
+  #     - ./demo_client/config.py:/app/config.py:ro
+  #     - ./demo_client/client_secrets.json:/app/client_secrets.json:ro
+  #     - ./logs/client:/var/log:delegated
 
-  # dummy cluster
-  cluster:
-    container_name: cluster
-    build: 
-      context: ../test-build
-      dockerfile: ./cluster/Dockerfile
-      network: host
-    networks:
-      firecrest-internal:
-        ipv4_address: 192.168.220.12
-    hostname: cluster
-    volumes:
-      - ./logs/cluster/:/var/log/slurm/:delegated
+  # # dummy cluster
+  # cluster:
+  #   container_name: cluster
+  #   build: 
+  #     context: ../test-build
+  #     dockerfile: ./cluster/Dockerfile
+  #     network: host
+  #   networks:
+  #     firecrest-internal:
+  #       ipv4_address: 192.168.220.12
+  #   hostname: cluster
+  #   volumes:
+  #     - ./logs/cluster/:/var/log/slurm/:delegated
 
   # complementary 3rd party services
-  keycloak:
-    image: "jboss/keycloak:15.0.2"
-    container_name: fckeycloak
-    env_file: keycloak/keycloak.env
-    environment:
-      KEYCLOAK_IMPORT: /var/tmp/config.json
-      Dkeycloak.migration.realmName: kcrealm
-    networks:
-      firecrest-internal:
-        ipv4_address: 192.168.220.20
-    ports:
-      - "${KEYCLOAK_PORT:-8080}:8080"
-    volumes:
-      - ./keycloak/config.json:/var/tmp/config.json:ro
-      - ./logs/keycloak:/opt/jboss/keycloak/standalone/log/:delegated
+  # keycloak:
+  #   image: "jboss/keycloak:15.0.2"
+  #   container_name: fckeycloak
+  #   env_file: keycloak/keycloak.env
+  #   environment:
+  #     KEYCLOAK_IMPORT: /var/tmp/config.json
+  #     Dkeycloak.migration.realmName: kcrealm
+  #   networks:
+  #     firecrest-internal:
+  #       ipv4_address: 192.168.220.20
+  #   ports:
+  #     - "${KEYCLOAK_PORT:-8080}:8080"
+  #   volumes:
+  #     - ./keycloak/config.json:/var/tmp/config.json:ro
+  #     - ./logs/keycloak:/opt/jboss/keycloak/standalone/log/:delegated
 
   kong:
     image: kong:2.5.0
@@ -230,20 +232,20 @@ services:
     ports:
       - 8000:8000
 
-  minio:
-    image: minio/minio:RELEASE.2021-02-01T22-56-52Z
-    command: minio server /data
-    container_name: minio
-    environment:
-     MINIO_ACCESS_KEY: storage_access_key
-     MINIO_SECRET_KEY: storage_secret_key
-    networks:
-      firecrest-internal:
-        ipv4_address: 192.168.220.19
-    ports:
-      - "9000:9000"
-    volumes:
-      - ./minio:/data:delegated
+  # minio:
+  #   image: minio/minio:RELEASE.2021-02-01T22-56-52Z
+  #   command: minio server /data
+  #   container_name: minio
+  #   environment:
+  #    MINIO_ACCESS_KEY: storage_access_key
+  #    MINIO_SECRET_KEY: storage_secret_key
+  #   networks:
+  #     firecrest-internal:
+  #       ipv4_address: 192.168.220.19
+  #   ports:
+  #     - "9000:9000"
+  #   volumes:
+  #     - ./minio:/data:delegated
 
   taskpersistence:
     container_name: taskpersistence
@@ -270,15 +272,15 @@ services:
       - ./opa:/opa-files
       - ./ssl:/ssl
 
-  openapi:
-    image: swaggerapi/swagger-ui:v3.47.1
-    container_name: openapi
-    ports:
-      - "9090:8080"
-    environment:
-      SWAGGER_JSON: /tmp/firecrest-developers-api.yaml
-    volumes:
-      - ../../doc/openapi/:/tmp/
+  # openapi:
+  #   image: swaggerapi/swagger-ui:v3.47.1
+  #   container_name: openapi
+  #   ports:
+  #     - "9090:8080"
+  #   environment:
+  #     SWAGGER_JSON: /tmp/firecrest-developers-api.yaml
+  #   volumes:
+  #     - ../../doc/openapi/:/tmp/
 
   jaeger:
     image: jaegertracing/all-in-one:1.24
