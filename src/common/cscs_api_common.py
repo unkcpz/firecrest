@@ -276,7 +276,7 @@ def exec_remote_command(headers, system_name, system_addr, action, file_transfer
         else:
             port = int(ipaddr[1])
 
-        username = get_username(headers[AUTH_HEADER_NAME])
+        username = get_username(headers[AUTH_HEADER_NAME])['username']
         
         user_key = "/user-key"
         ## with jump proxy

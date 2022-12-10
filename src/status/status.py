@@ -159,7 +159,8 @@ def test_system(machinename, headers, status_list=[]):
         else:
             port = int(ipaddr[1])
 
-        username = get_username(headers[AUTH_HEADER_NAME])
+        username = get_username(headers[AUTH_HEADER_NAME])['username']
+        app.logger.info(f"username {username}")
         
         user_key = "/user-key"
         ## with jump proxy

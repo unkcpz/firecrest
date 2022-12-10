@@ -8,6 +8,7 @@ version: '3.4'
 
 networks:
   firecrest-internal:
+    name: f7t
     driver: bridge
     ipam:
       driver: default
